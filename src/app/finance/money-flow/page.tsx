@@ -38,13 +38,13 @@ export default function MoneyFlowLedgerPage() {
     if (!companyId) { setEntries([]); setLoading(false); return }
 
     const [sales, ar, ap, expenses, returns, banks, ledger] = await Promise.all([
-      supabase.from('transactions').select('id,total_amount,amount_received,created_at,trans_no,is_posted,ledger_entry_group_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
+      supabase.from('transactions').select('id,total_amount,amount_received,created_at,trans_no,is_posted,ledger_entry_group_id,payment_type,bank_account_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
       supabase.from('ar_payments').select('id,amount,payment_date,payment_method,transaction_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('ap_payments').select('id,amount,payment_date,payment_method,purchase_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
-      supabase.from('expenses').select('id,amount,expense_date,category,paid_by,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
+      supabase.from('expenses').select('id,amount,expense_date,category,paid_by,bank_account_id,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
       supabase.from('sales_returns').select('id,total_amount,return_date,refund_method,bank_account_id,reason').eq('company_id', companyId).gte('return_date', from).lte('return_date', to),
       supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', companyId).eq('is_deleted', false),
-      supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
+      supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id,bank_account_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
     ])
 
     const queryResults = [sales, ar, ap, expenses, returns, banks]
@@ -55,7 +55,7 @@ export default function MoneyFlowLedgerPage() {
     ;(ar.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AR Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(ap.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AP Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(returns.data || []).forEach((x:any) => { if (x.refund_method !== 'credit' && x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
-    ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank') issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank; account-level mapping is unavailable in the current expense record') })
+    ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank' && !x.bank_account_id) issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank but has no bank account mapping') })
     const postedWithoutLedger = (sales.data || []).filter((x:any) => x.is_posted === true && !x.ledger_entry_group_id)
     postedWithoutLedger.slice(0,20).forEach((x:any) => issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' is posted but has no ledger entry group'))
 
@@ -94,7 +94,7 @@ export default function MoneyFlowLedgerPage() {
     ;(expenses.data || []).forEach((x:any) => {
       const amount = Number(x.amount || 0)
       if (amount <= 0) issues.push('Expense ' + x.id.slice(0,8) + ' has a non-positive amount')
-      rows.push({ id:'expense-'+x.id, date:x.expense_date, source:'Expense', direction:'out', amount:Number(x.amount || 0), account:x.paid_by === 'bank' ? 'Bank Account' : 'Cash', reference:x.ref_id ? x.ref_id.slice(0,8) : x.id.slice(0,8), note:x.category || 'Expense' })
+      rows.push({ id:'expense-'+x.id, date:x.expense_date, source:'Expense', direction:'out', amount:Number(x.amount || 0), account:x.bank_account_id ? (bankMap.get(x.bank_account_id) || 'Bank Account') : 'Cash', reference:x.ref_id ? x.ref_id.slice(0,8) : x.id.slice(0,8), note:x.category || 'Expense' })
     })
     ;(returns.data || []).forEach((x:any) => {
       if (x.refund_method === 'credit') return
