@@ -92,7 +92,7 @@ export default function InventoryPage() {
           <input type="search" placeholder={t.inv_search} value={search}
             onChange={e => setSearch(e.target.value)}
             autoComplete="off" inputMode="search"
-            className="pos-search w-full p-3 rounded-xl text-sm outline-none
+            className="pos-search w-full p-3 rounded-xl text-sm outline-none"
             style={{backgroundColor:'var(--color-card)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
         </div>
 
@@ -192,7 +192,7 @@ export default function InventoryPage() {
       {/* Modal */}
       {modal.type && modal.product && (
         <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center z-50 p-3 sm:p-4">
-          <div className="payment-task rounded-t-2xl sm:rounded-xl p-5 w-full max-w-sm shadow-xl">
+          <div className="payment-task rounded-t-2xl sm:rounded-xl p-5 w-full max-w-sm shadow-xl"
             style={{backgroundColor:'var(--color-card)', color:'var(--color-text)'}}>
             <h2 className="text-lg font-bold mb-1">
               {modal.type === 'in' ? t.inv_modal_stock_in : t.inv_modal_adjust}
