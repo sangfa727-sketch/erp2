@@ -155,28 +155,47 @@ export default function DashboardPage() {
     <AppLayout>
       <div className="min-h-screen p-4 md:p-6" style={{backgroundColor:'var(--color-bg)'}}>
 
-        {/* Header - Floating Style */}
-        <div className="rounded-2xl px-5 py-4 mb-6" style={{
-          background: 'var(--color-card)',
-          border: '1px solid var(--color-border)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
-        }}>
-          <div className="flex items-center justify-between">
+        <header className="mb-4 md:mb-5">
+          <div className="flex items-end justify-between gap-3">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold" style={{color:'var(--color-text)'}}>
-                📊 {(t as any).dash_title || 'Dashboard'}
-              </h1>
-              <p className="text-sm mt-0.5" style={{color:'var(--color-text-secondary)'}}>{dateStr}</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • {dateStr}</p>
+              <h1 className="mt-1 text-2xl md:text-3xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဒီနေ့ ဘာလုပ်မလဲ?</h1>
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
-              background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
-              border: '1px solid #a7f3d0'
-            }}>
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-              <span className="text-xs font-medium text-emerald-700">{t.live}</span>
+            <div className="hidden sm:flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold" style={{background:'var(--surface-1)',border:'1px solid var(--color-border)',color:'var(--color-text-secondary)'}}>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />{t.live}
             </div>
           </div>
-        </div>
+        </header>
+
+        <section aria-label="Quick actions" className="mb-5">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3">
+            {[
+              ['/pos','＋','ရောင်းချမယ်','POS ကို တန်းဖွင့်ပြီး စရောင်းပါ'],
+              ['/inventory','▣','Stock စစ်မယ်','လက်ကျန်နဲ့ reorder ကို တစ်ချက်ကြည့်ပါ'],
+              ['/expenses','−','Expense မှတ်မယ်','အသုံးစရိတ်ကို အလွယ်တကူ မှတ်ပါ'],
+              ['/finance/ar','₿','အကြွေးစစ်မယ်','Customer ရရန်ငွေကို စစ်ပါ'],
+            ].map(([href,icon,title,hint], i) => (
+              <Link key={href} href={href} className="material-control group min-h-[104px] md:min-h-[116px] rounded-xl p-4 flex flex-col justify-between" style={{background:i===0?'var(--surface-1)':'var(--surface-2)',borderColor:i===0?'var(--color-primary)':'var(--color-border)'}}>
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-semibold" style={{color:i===0?'var(--color-primary)':'var(--color-text)'}}>{icon}</span>
+                  <span className="text-xs opacity-50 group-hover:opacity-100">→</span>
+                </div>
+                <div>
+                  <div className="text-sm font-bold" style={{color:'var(--color-text)'}}>{title}</div>
+                  <div className="mt-0.5 text-[11px] leading-4 line-clamp-1" style={{color:'var(--color-text-secondary)'}}>{hint}</div>
+                </div>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-3 rounded-xl px-4 py-3 flex items-center gap-3" style={{background:'linear-gradient(135deg,rgba(59,130,246,.08),rgba(99,102,241,.04))',border:'1px solid var(--color-border)'}}>
+            <span className="text-lg">✦</span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold" style={{color:'var(--color-text)'}}>မသိတာရှိရင် AI ကို မေးပါ</p>
+              <p className="text-xs truncate" style={{color:'var(--color-text-secondary)'}}>“ဒီနေ့ sales ဘယ်လောက်လဲ?” “Stock နည်းတာ ဘာတွေရှိလဲ?”</p>
+            </div>
+            <span className="text-xs font-semibold whitespace-nowrap" style={{color:'var(--color-primary)'}}>AI →</span>
+          </div>
+        </section>
 
         {loading ? (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -186,39 +205,20 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            {/* KPI Cards - Gradient Floating Style */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
-              {kpiCards.map((card, i) => (
-                <Link key={i} href={card.href}>
-                  <div className="rounded-2xl p-4 md:p-5 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-lg active:scale-[0.98]"
-                    style={{
-                      background: card.gradient,
-                      border: `1px solid ${card.border}`,
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.08)'
-                    }}>
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-xs font-semibold uppercase tracking-wider" style={{color: card.textColor, opacity: 0.8}}>
-                        {card.label}
-                      </span>
-                      <span className="text-lg">{card.icon}</span>
-                    </div>
-                    <div className="text-xl md:text-2xl font-bold mb-1" style={{color: card.textColor}}>
-                      {card.value}
-                    </div>
-                    <div className="text-xs font-medium" style={{color: card.textColor, opacity: 0.7}}>
-                      {card.sub}
-                    </div>
-                    {/* Progress indicator */}
-                    <div className="mt-3 h-1 rounded-full overflow-hidden" style={{backgroundColor: 'rgba(255,255,255,0.5)'}}>
-                      <div className="h-full rounded-full" style={{
-                        width: '100%',
-                        background: `linear-gradient(90deg, ${card.textColor}40 0%, ${card.textColor}80 100%)`
-                      }}/>
-                    </div>
-                  </div>
+            <section className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 mb-5">
+              {[
+                [t.today_revenue, 'K ' + stats.todaySales.toLocaleString(), stats.todayCount + ' ' + t.transactions, '/reports/sales'],
+                [t.monthly_sales, 'K ' + stats.monthSales.toLocaleString(), t.this_month, '/reports/sales'],
+                [t.gross_profit, 'K ' + stats.monthProfit.toLocaleString(), 'After COGS', '/reports/sales'],
+                [t.expenses_label, 'K ' + stats.monthExpenses.toLocaleString(), t.this_month, '/expenses'],
+              ].map(([label,value,sub,href]) => (
+                <Link key={href} href={href} className="material-control rounded-xl p-3.5 md:p-4" style={{background:'var(--surface-1)',borderColor:'var(--color-border)'}}>
+                  <div className="text-[11px] font-semibold uppercase tracking-wide" style={{color:'var(--color-text-secondary)'}}>{label}</div>
+                  <div className="mt-1 text-lg md:text-xl font-bold truncate" style={{color:'var(--color-text)'}}>{value}</div>
+                  <div className="mt-0.5 text-[11px]" style={{color:'var(--color-text-secondary)'}}>{sub}</div>
                 </Link>
               ))}
-            </div>
+            </section>
 
             {/* Bottom Panels */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
