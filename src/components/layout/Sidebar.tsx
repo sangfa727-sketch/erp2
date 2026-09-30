@@ -42,6 +42,7 @@ const ERP_MENU_GROUPS = [
     groupKey: 'finance',
     items: [
       { href: '/finance/bank-accounts', icon: '🏦', key: 'bank_accounts' },
+      { href: '/finance/money-flow',    icon: '💰', key: 'money_flow' },
       { href: '/finance/ar',            icon: '📨', key: 'ar' },
       { href: '/finance/ap',            icon: '📤', key: 'ap' },
       { href: '/expenses',              icon: '💸', key: 'expenses' },
