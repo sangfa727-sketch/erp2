@@ -72,59 +72,49 @@ export default function ARPage() {
   const handleBatchPay = async () => {
     if (!selectedSales.length) return
     setBatchSaving(true)
-    const cashAmt = batchPayMethod === 'cash' ? getSelectedTotal(selectedCustomerData)
+    const totalSelected = getSelectedTotal(selectedCustomerData)
+    const cashAmt = batchPayMethod === 'cash' ? totalSelected
       : batchPayMethod === 'bank' ? 0
-      : parseFloat(batchCash) || 0
-    const bankAmt = batchPayMethod === 'bank' ? getSelectedTotal(selectedCustomerData)
-      : batchPayMethod === 'split' ? getSelectedTotal(selectedCustomerData) - cashAmt : 0
+      : Math.min(parseFloat(batchCash) || 0, totalSelected)
+    const bankAmt = totalSelected - cashAmt
+    const perCash = cashAmt / selectedSales.length
+    const perBank = bankAmt / selectedSales.length
     const today = new Date().toISOString().split('T')[0]
+
     for (const saleId of selectedSales) {
       const sale = selectedCustomerData?.sales.find(s => s.id === saleId)
-      if (!sale) continue
-      const debt = Number(sale.total_amount) - Number(sale.amount_received)
-      if (debt <= 0) continue
-      // Insert payment record
-      if (cashAmt > 0) {
-        await supabase.from('ar_payments').insert({
-          contact_id: sale.customer_id, transaction_id: saleId,
-          amount: Math.min(cashAmt / selectedSales.length, debt),
-          payment_date: today, payment_method: 'cash', notes: 'Batch payment'
+      if (!sale || !sale.customer_id) continue
+      let remaining = Math.max(0, Number(sale.total_amount) - Number(sale.amount_received))
+      if (remaining <= 0) continue
+
+      const cashPay = Math.min(perCash, remaining)
+      if (cashPay > 0) {
+        const { error } = await supabase.rpc('rpc_record_ar_payment_v2', {
+          p_contact_id: sale.customer_id, p_amount: cashPay, p_payment_method: 'cash',
+          p_transaction_id: sale.id, p_bank_account_id: null, p_payment_date: today, p_notes: 'Batch payment'
         })
+        if (error) { setMsg('Error: ' + error.message); setBatchSaving(false); return }
+        remaining -= cashPay
       }
-      if (bankAmt > 0 && batchBankId) {
-        await supabase.from('ar_payments').insert({
-          contact_id: sale.customer_id, transaction_id: saleId,
-          amount: Math.min(bankAmt / selectedSales.length, debt),
-          payment_date: today, payment_method: 'bank',
-          bank_account_id: batchBankId, notes: 'Batch payment'
+
+      const bankPay = Math.min(perBank, remaining)
+      if (bankPay > 0) {
+        if (!batchBankId) { setMsg('Bank account ရွေးပါ'); setBatchSaving(false); return }
+        const { error } = await supabase.rpc('rpc_record_ar_payment_v2', {
+          p_contact_id: sale.customer_id, p_amount: bankPay, p_payment_method: 'bank',
+          p_transaction_id: sale.id, p_bank_account_id: batchBankId, p_payment_date: today, p_notes: 'Batch payment'
         })
-      }
-      // Update transaction amount_received
-      const payAmt = Math.min(cashAmt / selectedSales.length + bankAmt / selectedSales.length, debt)
-      await supabase.from('transactions').update({
-        amount_received: Number(sale.amount_received) + payAmt
-      }).eq('id', saleId)
-      // Update customer balance
-      if (sale.customer_id) {
-        const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id', sale.customer_id).single()
-        if (contact) await supabase.from('contacts').update({
-          current_balance: Math.max(0, Number(contact.current_balance) - payAmt)
-        }).eq('id', sale.customer_id)
+        if (error) { setMsg('Error: ' + error.message); setBatchSaving(false); return }
       }
     }
-    // Update bank balance
-    if (bankAmt > 0 && batchBankId) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id', batchBankId).single()
-      if (ba) await supabase.from('bank_accounts').update({
-        current_balance: Math.max(0, Number(ba.current_balance) - bankAmt)
-      }).eq('id', batchBankId)
-    }
+
     setSelectedSales([])
     setShowBatchModal(false)
     setBatchCash('')
     setBatchSaving(false)
     await fetchAll()
   }
+
   const [payMethod, setPayMethod] = useState('cash')
   const [bankAccountId, setBankAccountId] = useState('')
   const [notes, setNotes] = useState('')
