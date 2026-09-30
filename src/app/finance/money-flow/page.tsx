@@ -26,6 +26,7 @@ export default function MoneyFlowLedgerPage() {
   const [source, setSource] = useState('all')
   const [from, setFrom] = useState(() => new Date().toISOString().slice(0,7) + '-01')
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10))
+  const [openingBalances, setOpeningBalances] = useState<Record<string,number>>({})
 
   const load = async () => {
     setLoading(true)
@@ -42,6 +43,7 @@ export default function MoneyFlowLedgerPage() {
     ])
 
     const bankMap = new Map((banks.data || []).map((b:any) => [b.id, b.account_name]))
+    setOpeningBalances(Object.fromEntries((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
     const rows: Entry[] = []
 
     ;(sales.data || []).forEach((x:any) => {
@@ -71,7 +73,10 @@ export default function MoneyFlowLedgerPage() {
     account,
     in: entries.filter(x=>x.account===account && x.direction==='in').reduce((s,x)=>s+x.amount,0),
     out: entries.filter(x=>x.account===account && x.direction==='out').reduce((s,x)=>s+x.amount,0),
+    current: openingBalances[account] ?? null,
   })).sort((a,b)=>(b.in-b.out)-(a.in-a.out))
+
+  const accountReconciliation = accountSummary.map(a => ({...a, net:a.in-a.out, expected:a.current === null ? null : a.current-a.in+a.out}))
 
   const openEntry = (x: Entry) => {
     const routes: Record<string,string> = {
@@ -126,9 +131,9 @@ export default function MoneyFlowLedgerPage() {
             <div><div className="font-bold" style={{color:'var(--color-text)'}}>🏦 Account Reconciliation</div><div className="text-xs" style={{color:'var(--color-text-secondary)'}}>ရွေးထားသောကာလအတွင်း account တစ်ခုချင်းစီ၏ recorded flow ကို စစ်ရန်</div></div>
           </div>
           <div className="space-y-2">
-            {accountSummary.map(a => <div key={a.account} className="flex items-center justify-between rounded-xl px-3 py-2" style={{background:'var(--color-bg)'}}>
-              <span className="text-sm font-semibold truncate">{a.account}</span>
-              <span className="text-xs whitespace-nowrap"><span className="text-green-600">+{money(a.in)}</span> · <span className="text-orange-600">-{money(a.out)}</span> · <b>{money(a.in-a.out)}</b></span>
+            {accountReconciliation.map(a => <div key={a.account} className="rounded-xl px-3 py-2" style={{background:'var(--color-bg)'}}>
+              <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold truncate">{a.account}</span><span className="text-xs whitespace-nowrap"><span className="text-green-600">+{money(a.in)}</span> · <span className="text-orange-600">-{money(a.out)}</span> · <b>Net {money(a.net)}</b></span></div>
+              {a.current !== null && <div className="mt-1 text-[10px] flex justify-between" style={{color:'var(--color-text-secondary)'}}><span>Current recorded: {money(a.current)}</span><span>Derived before period: {money(a.expected!)}</span></div>}
             </div>)}
           </div>
         </div>
