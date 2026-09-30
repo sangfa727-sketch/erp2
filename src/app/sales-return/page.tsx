@@ -76,36 +76,24 @@ export default function SalesReturnPage() {
     items.reduce((s:number,i:any) => s+(Number(i.return_qty)*Number(i.unit_price)),0)
 
   const save = async () => {
-    if (!modal.customer_id||modal.items.length===0) {
-      setMsg('❌ '+tAny.sr_customer_required); return
+    if (!modal.customer_id || modal.items.length === 0) {
+      setMsg('❌ ' + tAny.sr_customer_required); return
     }
     setSaving(true); setMsg('')
     const total = calcTotal(modal.items)
-    const { data: prof } = await supabase.from('profiles').select('company_id,id').maybeSingle()
-    const payload = {
-      company_id: prof?.company_id,
-      original_transaction_id: modal.original_transaction_id||null,
-      customer_id: modal.customer_id,
-      items: modal.items,
-      total_amount: total,
-      refund_method: modal.refund_method,
-      bank_account_id: modal.refund_method==='cash'?(modal.bank_account_id||null):null,
-      note: modal.note||null,
-      created_by: prof?.id,
-    }
-    const { error } = await supabase.from('sales_returns').insert(payload)
-    if (error) { setMsg('❌ '+error.message); setSaving(false); return }
-
-    if (modal.refund_method==='credit') {
-      const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id',modal.customer_id).maybeSingle()
-      await supabase.from('contacts').update({ current_balance: Number(contact?.current_balance||0)+total }).eq('id',modal.customer_id)
-    } else if (modal.refund_method==='cash' && modal.bank_account_id) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id',modal.bank_account_id).maybeSingle()
-      await supabase.from('bank_accounts').update({ current_balance: Number(ba?.current_balance||0)-total }).eq('id',modal.bank_account_id)
-    }
+    const { error } = await supabase.rpc('rpc_record_sales_return_v2', {
+      p_original_transaction_id: modal.original_transaction_id || null,
+      p_customer_id: modal.customer_id,
+      p_items: modal.items,
+      p_total_amount: total,
+      p_refund_method: modal.refund_method,
+      p_bank_account_id: modal.refund_method === 'cash' ? (modal.bank_account_id || null) : null,
+      p_note: modal.note || null,
+    })
+    if (error) { setMsg('❌ ' + error.message); setSaving(false); return }
 
     setModal(null); await fetchAll(); setSaving(false)
-    setMsg('✅ '+tAny.sr_saved); setTimeout(()=>setMsg(''),3000)
+    setMsg('✅ ' + tAny.sr_saved); setTimeout(() => setMsg(''), 3000)
   }
 
   return (
