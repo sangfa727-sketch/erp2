@@ -155,8 +155,8 @@ export default function GRNPage() {
 
   return (
     <AppLayout>
-      <div className="p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl font-bold" style={{color:'var(--color-text)'}}>📦 {t.page_grn}</h1>
           <button onClick={openModal} className="text-sm px-4 py-2 rounded-lg font-medium text-white" style={{backgroundColor:'var(--color-primary)'}}>{t.grn_add_btn}</button>
         </div>
@@ -167,7 +167,7 @@ export default function GRNPage() {
           ) : grns.length === 0 ? (
             <div className="text-center p-8" style={{color:'var(--color-text-sub)'}}>{t.grn_no_data}</div>
           ) : grns.map(g => (
-            <div key={g.id} className="rounded-xl p-4"
+            <div key={g.id} className="material-control rounded-xl p-4"
               style={{backgroundColor:'var(--color-card)', border:'1px solid var(--color-border)', boxShadow:'0 1px 3px rgba(0,0,0,0.05)'}}>
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -201,30 +201,30 @@ export default function GRNPage() {
 
       {modal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl p-5 w-full max-w-2xl shadow-xl max-h-[90vh] overflow-y-auto" style={{backgroundColor:'var(--color-card)', color:'var(--color-text)'}}>
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-5 w-full max-w-2xl shadow-xl max-h-[92vh] overflow-y-auto" style={{backgroundColor:'var(--color-card)', color:'var(--color-text)'}}>
             <h2 className="text-lg font-bold mb-4">{t.grn_modal_title}</h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.grn_supplier}</label>
-                <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="w-full p-2.5 rounded-lg text-sm outline-none" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
+                <select value={supplierId} onChange={e => setSupplierId(e.target.value)} className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
                   <option value="">{t.grn_no_supplier}</option>
                   {suppliers.map(s => <option key={s.id} value={s.id}>{s.contact_name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.grn_received_date}</label>
-                <input type="date" value={receivedDate} onChange={e => setReceivedDate(e.target.value)} className="w-full p-2.5 rounded-lg text-sm outline-none" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
+                <input type="date" value={receivedDate} onChange={e => setReceivedDate(e.target.value)} className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.grn_carrier}</label>
                 <input type="text" value={carrierName} onChange={e => setCarrierName(e.target.value)}
-                  className="w-full p-2.5 rounded-lg text-sm outline-none" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_carrier_placeholder} />
+                  className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_carrier_placeholder} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.grn_vehicle}</label>
                 <input type="text" value={vehicleNo} onChange={e => setVehicleNo(e.target.value)}
-                  className="w-full p-2.5 rounded-lg text-sm outline-none" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_vehicle_placeholder} />
+                  className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_vehicle_placeholder} />
               </div>
             </div>
 
@@ -307,13 +307,13 @@ export default function GRNPage() {
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">{t.grn_notes}</label>
               <input type="text" value={notes} onChange={e => setNotes(e.target.value)}
-                className="w-full p-2.5 rounded-lg text-sm outline-none" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_notes_placeholder} />
+                className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm" style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} placeholder={t.grn_notes_placeholder} />
             </div>
 
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={() => setModal(false)} className="flex-1 py-2 border rounded-lg text-sm">{t.btn_cancel}</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm disabled:opacity-50">
+              <button onClick={() => setModal(false)} className="material-control flex-1 min-h-[52px] py-2 border rounded-xl text-sm">{t.btn_cancel}</button>
+              <button onClick={handleSave} disabled={saving} className="material-control flex-1 min-h-[52px] py-2 bg-blue-600 text-white rounded-xl text-sm disabled:opacity-50">
                 {saving ? t.loading : t.grn_save_btn}
               </button>
             </div>
