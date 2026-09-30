@@ -4,6 +4,7 @@ import { toEnglishNumber } from '@/lib/utils'
 import { useI18n } from '@/lib/i18n'
 import { createClient } from '@/lib/supabase'
 import { getDb } from '@/lib/db'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface BankAccount { id: string; account_name: string; current_balance: number; account_type?: { icon: string } }
 interface Contact { id: string; contact_name: string; phone?: string }
@@ -190,21 +191,22 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         {/* Cash mode */}
         {mode === 'cash' && (
           <div className="mb-4 space-y-3">
-            {/* Bank transfer toggle */}
-            <div className="flex items-center justify-between p-3 rounded-xl"
-              style={{backgroundColor: 'var(--color-bg, #f9fafb)', border: '1px solid var(--color-border, #e5e7eb)'}}>
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🏦</span>
-                <span className="text-sm font-medium" style={{color: 'var(--color-text, #111827)'}}>🏦 Bank Account</span>
-              </div>
-              <button onClick={() => setUseBankTransfer(p => !p)}
-                className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors"
-                style={{backgroundColor: useBankTransfer ? 'var(--color-primary, #2563eb)' : 'var(--color-border, #d1d5db)'}}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${useBankTransfer ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
+            <MoneyFlowMethodPicker
+              value={useBankTransfer ? 'bank' : 'cash'}
+              onChange={(value) => {
+                const bank = value === 'bank'
+                setUseBankTransfer(bank)
+                setMsg('')
+                if (!bank) setSelectedBankId('')
+              }}
+              title="POS Payment Route"
+              options={[
+                { value: 'cash', icon: '💵', label: 'Cash', description: 'လက်ငင်းငွေ' },
+                { value: 'bank', icon: '🏦', label: 'Bank Account', description: 'ရွေးထားသော account ထဲဝင်မည်' },
+              ]}
+            />
 
-            {/* Bank account selector */}
+            {/* Bank account selector */
             {useBankTransfer && (
               <div className="space-y-2">
                 {bankAccounts.length === 0 ? (
@@ -231,6 +233,16 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
             )}
 
             {/* Cash input (only if not bank transfer) */}
+            <MoneyFlowImpact
+              direction="in"
+              amount={totalAmount}
+              routeLabel={useBankTransfer ? 'POS Sale → Bank Account' : 'POS Sale → Cash'}
+              accountLabel={useBankTransfer ? (bankAccounts.find(b => b.id === selectedBankId)?.account_name || 'Bank Account ရွေးပါ') : 'Cash'}
+              helper={useBankTransfer
+                ? 'ရွေးထားသော bank account balance တိုးမည်။'
+                : 'POS sale မှ cash ရရှိပြီး cash balance တိုးမည်။'}
+            />
+
             {!useBankTransfer && (
               <>
                 <div>
