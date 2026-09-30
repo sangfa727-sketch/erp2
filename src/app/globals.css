@@ -465,3 +465,19 @@ select:focus-visible {
     min-height: 48px;
   }
 }
+
+
+/* ERP2 task-first POS */
+.pos-task-bar{background:var(--surface-1);border:1px solid var(--color-border);box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.pos-search{min-height:48px;background:var(--surface-2);color:var(--text-strong);border:1px solid var(--color-border);border-radius:.875rem;transition:border-color .15s,box-shadow .15s,background-color .15s}
+.pos-search:focus{background:var(--surface-1);border-color:var(--color-primary)}
+.pos-scan{min-width:48px;min-height:48px;border-radius:.875rem}
+.pos-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pos-product-card{min-height:104px;padding:.75rem;border-radius:.875rem;background:var(--surface-1);border:1px solid var(--color-border);color:var(--text-strong);box-shadow:0 1px 3px rgba(15,23,42,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
+.pos-product-card:hover{border-color:var(--color-primary);box-shadow:0 5px 16px rgba(15,23,42,.1);transform:translateY(-1px)}
+.pos-product-card:active{transform:scale(.985)}
+.pos-product-card:disabled{opacity:.48}.pos-stock{color:var(--text-muted)}.pos-stock-low{color:#d97706}.pos-stock-out{color:#dc2626}
+@media(min-width:640px){.pos-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1024px){.pos-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:767px){.pos-task-bar{border-left:0;border-right:0;border-radius:0}.pos-product-card{min-height:96px}}
+[data-theme=dark] .pos-task-bar,[data-theme=dark] .pos-product-card{box-shadow:0 1px 3px rgba(0,0,0,.28)}
