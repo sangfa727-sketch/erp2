@@ -38,7 +38,7 @@ export default function MoneyFlowLedgerPage() {
     if (!companyId) { setEntries([]); setLoading(false); return }
 
     const [sales, ar, ap, expenses, returns, banks, ledger] = await Promise.all([
-      supabase.from('transactions').select('id,total_amount,amount_received,created_at,trans_no').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
+      supabase.from('transactions').select('id,total_amount,amount_received,created_at,trans_no,is_posted,ledger_entry_group_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
       supabase.from('ar_payments').select('id,amount,payment_date,payment_method,transaction_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('ap_payments').select('id,amount,payment_date,payment_method,purchase_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('expenses').select('id,amount,expense_date,category,paid_by,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
