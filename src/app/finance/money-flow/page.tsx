@@ -41,7 +41,7 @@ export default function MoneyFlowLedgerPage() {
       supabase.from('ap_payments').select('id,amount,payment_date,payment_method,purchase_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('expenses').select('id,amount,expense_date,category,paid_by,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
       supabase.from('sales_returns').select('id,total_amount,return_date,refund_method,bank_account_id,reason').eq('company_id', companyId).gte('return_date', from).lte('return_date', to),
-      supabase.from('bank_accounts').select('id,account_name').eq('company_id', companyId).eq('is_deleted', false),
+      supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', companyId).eq('is_deleted', false),
     ])
 
     const queryResults = [sales, ar, ap, expenses, returns, banks]
@@ -71,7 +71,7 @@ export default function MoneyFlowLedgerPage() {
     rows.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     const seen = new Set<string>()
     rows.forEach(x => {
-      const key = x.source + '|' + x.id + '|' + x.amount + '|' + String(x.date).slice(0,10)
+      const key = x.source + '|' + x.reference + '|' + x.amount + '|' + String(x.date).slice(0,10)
       if (seen.has(key)) issues.push('Duplicate ledger row detected for ' + x.source + ' ' + x.reference)
       seen.add(key)
     })
