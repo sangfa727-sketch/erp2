@@ -37,17 +37,18 @@ export default function MoneyFlowLedgerPage() {
     const companyId = await getCompanyId()
     if (!companyId) { setEntries([]); setLoading(false); return }
 
-    const [sales, ar, ap, expenses, returns, banks] = await Promise.all([
+    const [sales, ar, ap, expenses, returns, banks, ledger] = await Promise.all([
       supabase.from('transactions').select('id,total_amount,amount_received,created_at,trans_no').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
       supabase.from('ar_payments').select('id,amount,payment_date,payment_method,transaction_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('ap_payments').select('id,amount,payment_date,payment_method,purchase_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('expenses').select('id,amount,expense_date,category,paid_by,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
       supabase.from('sales_returns').select('id,total_amount,return_date,refund_method,bank_account_id,reason').eq('company_id', companyId).gte('return_date', from).lte('return_date', to),
       supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', companyId).eq('is_deleted', false),
+      supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
     ])
 
     const queryResults = [sales, ar, ap, expenses, returns, banks]
-    const queryNames = ['POS Sales','AR Payments','AP Payments','Expenses','Sales Returns','Bank Accounts']
+    const queryNames = ['POS Sales','AR Payments','AP Payments','Expenses','Sales Returns','Bank Accounts','Ledger']
     const issues: string[] = []
     queryResults.forEach((result:any, i:number) => { if (result.error) issues.push(queryNames[i] + ' data could not be loaded: ' + (result.error.message || 'query error')) })
     const bankMap = new Map((banks.data || []).map((b:any) => [b.id, b.account_name]))
@@ -55,7 +56,20 @@ export default function MoneyFlowLedgerPage() {
     ;(ap.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AP Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(returns.data || []).forEach((x:any) => { if (x.refund_method !== 'credit' && x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank') issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank; account-level mapping is unavailable in the current expense record') })
-    setOpeningBalances(Object.fromEntries((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
+    const postedWithoutLedger = (sales.data || []).filter((x:any) => x.is_posted === true && !x.ledger_entry_group_id)
+    postedWithoutLedger.slice(0,20).forEach((x:any) => issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' is posted but has no ledger entry group'))
+
+    const ledgerGroups = new Map<string,{debit:number,credit:number,rows:number}>()
+    ;(ledger.data || []).forEach((x:any) => {
+      const g = ledgerGroups.get(x.entry_group_id) || {debit:0,credit:0,rows:0}
+      g.debit += Number(x.debit || 0); g.credit += Number(x.credit || 0); g.rows += 1
+      ledgerGroups.set(x.entry_group_id, g)
+    })
+    Array.from(ledgerGroups.entries()).forEach(([group,g]) => {
+      if (Math.abs(g.debit - g.credit) > 0.005) issues.push('Ledger group ' + group.slice(0,8) + ' is unbalanced: debit ' + money(g.debit) + ' vs credit ' + money(g.credit))
+    })
+
+    setOpeningBalances((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
     const rows: Entry[] = []
 
     ;(sales.data || []).forEach((x:any) => {
