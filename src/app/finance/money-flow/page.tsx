@@ -55,6 +55,7 @@ export default function MoneyFlowLedgerPage() {
     ;(ar.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AR Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(ap.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AP Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(returns.data || []).forEach((x:any) => { if (x.refund_method !== 'credit' && x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
+    ;(sales.data || []).forEach((x:any) => { if (x.payment_type === 'bank' && !x.bank_account_id) issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' uses Bank payment but has no bank account mapping') })
     ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank' && !x.bank_account_id) issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank but has no bank account mapping') })
     const postedWithoutLedger = (sales.data || []).filter((x:any) => x.is_posted === true && !x.ledger_entry_group_id)
     postedWithoutLedger.slice(0,20).forEach((x:any) => issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' is posted but has no ledger entry group'))
@@ -77,7 +78,7 @@ export default function MoneyFlowLedgerPage() {
       const total = Number(x.total_amount || 0)
       if (received < 0) issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' has a negative received amount')
       if (total >= 0 && received > total) issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' received amount exceeds total amount')
-      if (received > 0) rows.push({ id:'sale-'+x.id, date:x.created_at, source:'POS Sale', direction:'in', amount:received, account:'Cash / POS', reference:x.trans_no || x.id.slice(0,8), note:'Sale payment received' })
+      if (received > 0) rows.push({ id:'sale-'+x.id, date:x.created_at, source:'POS Sale', direction:'in', amount:received, account:x.bank_account_id ? (bankMap.get(x.bank_account_id) || 'Bank Account') : 'Cash / POS', reference:x.trans_no || x.id.slice(0,8), note:'Sale payment received' })
     })
     ;(ar.data || []).forEach((x:any) => {
       const amount = Number(x.amount || 0)
