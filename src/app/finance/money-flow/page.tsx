@@ -32,6 +32,8 @@ export default function MoneyFlowLedgerPage() {
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null)
   const [issueFilter, setIssueFilter] = useState(false)
   const [resolvedIssues, setResolvedIssues] = useState<Set<string>>(new Set())
+  const [ledgerDetails, setLedgerDetails] = useState<any[]>([])
+  const [detailGroup, setDetailGroup] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -61,14 +63,15 @@ export default function MoneyFlowLedgerPage() {
     const postedWithoutLedger = (sales.data || []).filter((x:any) => x.is_posted === true && !x.ledger_entry_group_id)
     postedWithoutLedger.slice(0,20).forEach((x:any) => issues.push('POS Sale ' + (x.trans_no || x.id.slice(0,8)) + ' is posted but has no ledger entry group'))
 
-    const ledgerGroups = new Map<string,{debit:number,credit:number,rows:number}>()
+    const ledgerGroups = new Map<string,{debit:number,credit:number,rows:number,ref_id:string|null,reversal:boolean}>()
     ;(ledger.data || []).forEach((x:any) => {
-      const g = ledgerGroups.get(x.entry_group_id) || {debit:0,credit:0,rows:0}
+      const g = ledgerGroups.get(x.entry_group_id) || {debit:0,credit:0,rows:0,ref_id:x.ref_id || null,reversal:false}
       g.debit += Number(x.debit || 0); g.credit += Number(x.credit || 0); g.rows += 1
+      g.reversal = g.reversal || String(x.description || '').startsWith('REVERSAL:')
       ledgerGroups.set(x.entry_group_id, g)
     })
     Array.from(ledgerGroups.entries()).forEach(([group,g]) => {
-      if (Math.abs(g.debit - g.credit) > 0.005) issues.push('Ledger group ' + group.slice(0,8) + ' is unbalanced: debit ' + money(g.debit) + ' vs credit ' + money(g.credit))
+      if (Math.abs(g.debit - g.credit) > 0.005 && !g.reversal) issues.push('Ledger group ' + group + ' is unbalanced: debit ' + money(g.debit) + ' vs credit ' + money(g.credit))
     })
 
     setOpeningBalances((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
@@ -148,6 +151,12 @@ export default function MoneyFlowLedgerPage() {
     return { source, href: source ? href[source] : undefined, type, severity }
   }
 
+  const openLedgerGroup = async (group: string) => {
+    if (!group) return
+    const { data } = await supabase.from('ledger').select('id,entry_group_id,account_code,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id,bank_account_id').eq('entry_group_id', group).order('created_at')
+    setLedgerDetails(data || []); setDetailGroup(group)
+  }
+
   const openEntry = (x: Entry) => {
     const routes: Record<string,string> = {
       'POS Sale':'/reports/sales',
@@ -201,6 +210,7 @@ export default function MoneyFlowLedgerPage() {
                 </div>
                 <div className="mt-2 flex items-center gap-2">
                   {meta.href && <button onClick={()=>{ if(meta.href) window.location.href=meta.href }} className="text-[10px] font-semibold underline">Review {meta.source}</button>}
+                  {issue.startsWith('Ledger group ') && <button onClick={()=>openLedgerGroup(issue.match(/Ledger group ([0-9a-f-]{36})/)?.[1] || '')} className="text-[10px] font-semibold underline">View ledger rows</button>}
                   <button onClick={()=>setResolvedIssues(prev=>new Set(prev).add(issue))} className="text-[10px] font-semibold opacity-70 hover:opacity-100">Mark reviewed</button>
                 </div>
               </div>
@@ -209,6 +219,15 @@ export default function MoneyFlowLedgerPage() {
             {auditIssues.filter(issue => !resolvedIssues.has(issue)).length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.filter(issue => !resolvedIssues.has(issue)).length-6} more issues</div>}
           </div>}
           {lastRefreshed && <div className="mt-2 text-[10px]" style={{color:'var(--color-text-secondary)'}}>Last refreshed: {lastRefreshed}</div>}
+          {detailGroup && (
+            <div className="mt-3 rounded-xl p-3" style={{background:'var(--color-bg)',border:'1px solid var(--color-border)'}}>
+              <div className="flex items-center justify-between mb-2"><div className="text-xs font-bold">Ledger group detail</div><button onClick={()=>setDetailGroup(null)} className="text-xs underline">Close</button></div>
+              <div className="text-[10px] mb-2 font-mono break-all">{detailGroup}</div>
+              <div className="space-y-1">{ledgerDetails.map((l:any)=><div key={l.id} className="grid grid-cols-[1fr_auto_auto] gap-2 text-[10px]">
+                <span>{l.account_code} · {l.description}</span><span>Dr {money(l.debit)}</span><span>Cr {money(l.credit)}</span>
+              </div>)}</div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
