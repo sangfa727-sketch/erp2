@@ -303,7 +303,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         {/* Mobile close button */}
         {onClose && (
           <button onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-2 md:hidden transition-colors"
+            className="material-control w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-2 md:hidden transition-colors"
             style={{
               color: isSupportMode ? 'rgba(255,255,255,0.8)' : 'var(--sidebar-icon, #9CA3AF)',
               backgroundColor: isSupportMode ? 'rgba(255,255,255,0.1)' : 'var(--sidebar-hover-bg, #1f2937)',
@@ -315,7 +315,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         {/* Desktop collapse toggle (ERP only) */}
         {!isSupportMode && (
           <button onClick={() => setCollapsed(!collapsed)}
-            className="w-6 h-6 rounded-md items-center justify-center flex-shrink-0 ml-1 hidden md:flex transition-colors"
+            className="material-control w-6 h-6 rounded-md items-center justify-center flex-shrink-0 ml-1 hidden md:flex transition-colors"
             style={{ color: 'var(--sidebar-icon, #6B7280)' }}>
             <span className="text-xs">{collapsed ? '▶' : '◀'}</span>
           </button>
@@ -360,7 +360,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                     href={item.href}
                     title={collapsed && !isSupportMode ? label : undefined}
                     onClick={onClose}
-                    className="flex items-center rounded-xl mb-1 transition-all duration-150 active:scale-[0.98]"
+                    className="sidebar-item material-control flex items-center rounded-xl mb-1 transition-all duration-150 active:scale-[0.98]"
                     style={{
                       padding:         collapsed && !isSupportMode ? '10px' : '10px 12px',
                       justifyContent:  collapsed && !isSupportMode ? 'center' : 'flex-start',
