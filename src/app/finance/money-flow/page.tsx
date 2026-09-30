@@ -67,6 +67,22 @@ export default function MoneyFlowLedgerPage() {
   const totalIn = filtered.filter(x=>x.direction==='in').reduce((s,x)=>s+x.amount,0)
   const totalOut = filtered.filter(x=>x.direction==='out').reduce((s,x)=>s+x.amount,0)
   const sources = Array.from(new Set(entries.map(x=>x.source)))
+  const accountSummary = Array.from(new Set(entries.map(x=>x.account))).map(account => ({
+    account,
+    in: entries.filter(x=>x.account===account && x.direction==='in').reduce((s,x)=>s+x.amount,0),
+    out: entries.filter(x=>x.account===account && x.direction==='out').reduce((s,x)=>s+x.amount,0),
+  })).sort((a,b)=>(b.in-b.out)-(a.in-a.out))
+
+  const openEntry = (x: Entry) => {
+    const routes: Record<string,string> = {
+      'POS Sale':'/reports/sales',
+      'AR Payment':'/finance/ar',
+      'AP Payment':'/finance/ap',
+      'Expense':'/expenses',
+      'Sales Return':'/sales-return',
+    }
+    window.location.href = routes[x.source] || '/finance/money-flow'
+  }
 
   return (
     <AppLayout>
@@ -105,6 +121,18 @@ export default function MoneyFlowLedgerPage() {
           {sources.map(s=><button key={s} onClick={()=>setSource(s)} className={`px-3 py-2 rounded-full text-xs font-semibold whitespace-nowrap ${source===s?'bg-blue-600 text-white':'bg-gray-100 text-gray-600'}`}>{s}</button>)}
         </div>
 
+        <div className="rounded-2xl p-4 mb-4" style={{background:'var(--color-card)',border:'1px solid var(--color-border)'}}>
+          <div className="flex items-center justify-between mb-3">
+            <div><div className="font-bold" style={{color:'var(--color-text)'}}>🏦 Account Reconciliation</div><div className="text-xs" style={{color:'var(--color-text-secondary)'}}>ရွေးထားသောကာလအတွင်း account တစ်ခုချင်းစီ၏ recorded flow ကို စစ်ရန်</div></div>
+          </div>
+          <div className="space-y-2">
+            {accountSummary.map(a => <div key={a.account} className="flex items-center justify-between rounded-xl px-3 py-2" style={{background:'var(--color-bg)'}}>
+              <span className="text-sm font-semibold truncate">{a.account}</span>
+              <span className="text-xs whitespace-nowrap"><span className="text-green-600">+{money(a.in)}</span> · <span className="text-orange-600">-{money(a.out)}</span> · <b>{money(a.in-a.out)}</b></span>
+            </div>)}
+          </div>
+        </div>
+
         <div className="rounded-2xl overflow-hidden" style={{background:'var(--color-card)',border:'1px solid var(--color-border)'}}>
           {loading ? <div className="p-12 text-center" style={{color:'var(--color-text-secondary)'}}>Loading ledger…</div> : filtered.length===0 ? <div className="p-12 text-center" style={{color:'var(--color-text-secondary)'}}>📭 ဒီကာလအတွင်း Money Flow record မရှိပါ</div> : (
             <div className="overflow-x-auto">
@@ -118,7 +146,7 @@ export default function MoneyFlowLedgerPage() {
                   <td className={`p-3 font-bold ${x.direction==='in'?'text-green-600':'text-orange-600'}`}>{x.direction==='in'?'IN':'OUT'}</td>
                   <td className="p-3 text-right font-bold whitespace-nowrap">{money(x.amount)}</td>
                   <td className="p-3 whitespace-nowrap">{x.account}</td>
-                  <td className="p-3 font-mono text-xs">{x.reference}</td>
+                  <td className="p-3 font-mono text-xs"><button onClick={()=>openEntry(x)} className="underline underline-offset-2 hover:opacity-70">{x.reference}</button></td>
                 </tr>)}</tbody>
               </table>
             </div>
