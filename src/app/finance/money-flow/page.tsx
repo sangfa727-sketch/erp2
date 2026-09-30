@@ -47,7 +47,7 @@ export default function MoneyFlowLedgerPage() {
       supabase.from('ap_payments').select('id,amount,payment_date,payment_method,purchase_id,bank_account_id').eq('company_id', companyId).gte('payment_date', from).lte('payment_date', to),
       supabase.from('expenses').select('id,amount,expense_date,category,paid_by,bank_account_id,ref_id').eq('company_id', companyId).gte('expense_date', from).lte('expense_date', to),
       supabase.from('sales_returns').select('id,total_amount,return_date,refund_method,bank_account_id,reason').eq('company_id', companyId).gte('return_date', from).lte('return_date', to),
-      supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', companyId).eq('is_deleted', false),
+      supabase.from('bank_accounts').select('id,account_name,opening_balance,current_balance').eq('company_id', companyId).eq('is_deleted', false),
       supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id,bank_account_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
     ])
 
