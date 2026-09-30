@@ -7,6 +7,7 @@ import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import { toEnglishNumber } from '@/lib/utils'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface CreditSale {
   id: string
@@ -497,13 +498,15 @@ export default function ARPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
                 <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_payment_method}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setPayMethod('cash')} className={`py-2 rounded-lg text-sm border ${payMethod==='cash'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ar_cash}</button>
-                  <button onClick={() => setPayMethod('bank')} className={`py-2 rounded-lg text-sm border ${payMethod==='bank'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ar_bank}</button>
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={payMethod}
+                onChange={setPayMethod}
+                title={t.ar_payment_method}
+                options={[
+                  { value:'cash', icon:'💵', label:t.ar_cash, description:'Receive directly as cash.' },
+                  { value:'bank', icon:'🏦', label:t.ar_bank, description:'Receive into a bank account.' },
+                ]}
+              />
               {payMethod==='bank' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_bank_account}</label>
