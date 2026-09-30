@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stillastock TTS Test — E1b</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Padauk", "Myanmar Text", sans-serif;
+    max-width: 720px;
+    margin: 32px auto;
+    padding: 0 20px;
+    background: #f7f8fa;
+    color: #1a1a1a;
+    line-height: 1.6;
+  }
+  h1 { font-size: 22px; margin-bottom: 8px; }
+  .sub { color: #667; font-size: 14px; margin-bottom: 24px; }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    margin-bottom: 16px;
+  }
+  label { display: block; margin: 12px 0 6px; font-weight: 500; font-size: 14px; }
+  textarea, select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: inherit;
+  }
+  textarea { min-height: 90px; resize: vertical; }
+  .row { display: flex; gap: 12px; align-items: flex-end; margin-top: 16px; }
+  .row > * { flex: 1; }
+  button {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    flex: 0 0 auto;
+  }
+  button:hover:not(:disabled) { background: #1d4ed8; }
+  button:disabled { background: #94a3b8; cursor: not-allowed; }
+  .status {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    margin-top: 12px;
+    display: none;
+  }
+  .status.info { background: #eff6ff; color: #1e40af; display: block; }
+  .status.ok { background: #ecfdf5; color: #065f46; display: block; }
+  .status.err { background: #fef2f2; color: #991b1b; display: block; }
+  audio { width: 100%; margin-top: 12px; }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+    font-size: 13px;
+  }
+  .metric {
+    background: #f8fafc;
+    padding: 8px 12px;
+    border-radius: 6px;
+  }
+  .metric b { color: #475569; font-weight: 500; }
+  .presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .preset {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #475569;
+  }
+  .preset:hover { background: #e2e8f0; }
+</style>
+</head>
+<body>
+
+<h1>🎙️ Stillastock TTS Test — Sprint E1b</h1>
+<p class="sub">Browser playback verification for hybrid architecture Gate 2. Route: <code>/api/ai/tts</code></p>
+
+<div class="card">
+  <label>Text to speak</label>
+  <textarea id="text">ရောင်းမှုပြီးပါပြီ။ နှစ်သောင်း ကျပ်။</textarea>
+
+  <div class="presets">
+    <span class="preset" data-text="ရောင်းမှုပြီးပါပြီ။ နှစ်သောင်း ကျပ်။">Sale confirm</span>
+    <span class="preset" data-text="TR-000162 ရောင်းမှုပြီးပါပြီ။ နှစ်သောင်း ကျပ်။">Sale + code (strip test)</span>
+    <span class="preset" data-text="ဒီနေ့ ရောင်းအား စုစုပေါင်း သုံးသိန်း လေးသောင်း ကျပ်ဖြစ်ပြီး၊ ဖောက်သည် ခုနစ်ဦး ဝယ်သွားပါတယ်။">Voice report (S4)</span>
+    <span class="preset" data-text="ကော်ဖီ လက်ကျန် ဆယ်ဖာ ရှိပါတယ်။ ဆက်ရောင်းမလား?">Question intonation</span>
+  </div>
+
+  <div class="row">
+    <div>
+      <label>Voice</label>
+      <select id="voice">
+        <option value="Kore">Kore (default)</option>
+        <option value="Charon">Charon</option>
+      </select>
+    </div>
+    <button id="go">🔊 Speak</button>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <audio id="player" controls></audio>
+
+  <div class="metrics" id="metrics" style="display:none;">
+    <div class="metric"><b>Server elapsed:</b> <span id="m-server">—</span></div>
+    <div class="metric"><b>Network + parse:</b> <span id="m-network">—</span></div>
+    <div class="metric"><b>Time to first byte:</b> <span id="m-ttfb">—</span></div>
+    <div class="metric"><b>Audio size:</b> <span id="m-size">—</span></div>
+    <div class="metric"><b>Audio duration:</b> <span id="m-duration">—</span></div>
+    <div class="metric"><b>Voice used:</b> <span id="m-voice">—</span></div>
+  </div>
+</div>
+
+<div class="card">
+  <p style="margin: 0; font-size: 13px; color: #667;">
+    <b>What to verify:</b> audio plays cleanly, no distortion, Kore/Charon voice matches Phase 1b quality,
+    code-strip preset drops "TR-000162" silently, and total user-perceived latency (server + network) is reasonable
+    (target: under 5s including network for daily ERP use).
+  </p>
+</div>
+
+<script>
+const goBtn = document.getElementById('go');
+const player = document.getElementById('player');
+const statusEl = document.getElementById('status');
+const metrics = document.getElementById('metrics');
+
+function setStatus(msg, cls) {
+  statusEl.className = 'status ' + cls;
+  statusEl.textContent = msg;
+}
+
+document.querySelectorAll('.preset').forEach(el => {
+  el.addEventListener('click', () => {
+    document.getElementById('text').value = el.dataset.text;
+  });
+});
+
+goBtn.addEventListener('click', async () => {
+  const text = document.getElementById('text').value.trim();
+  const voice = document.getElementById('voice').value;
+  if (!text) { setStatus('Text is empty', 'err'); return; }
+
+  goBtn.disabled = true;
+  setStatus('Requesting TTS…', 'info');
+  metrics.style.display = 'none';
+
+  const t0 = performance.now();
+  try {
+    const resp = await fetch('/api/ai/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice }),
+    });
+
+    const tFirstByte = performance.now();
+
+    if (!resp.ok) {
+      const body = await resp.text().catch(() => '');
+      setStatus(`HTTP ${resp.status}: ${body.slice(0, 200)}`, 'err');
+      return;
+    }
+
+    const serverElapsed = resp.headers.get('x-tts-elapsed-ms');
+    const voiceUsed = resp.headers.get('x-tts-voice') || voice;
+    const contentLen = resp.headers.get('content-length');
+
+    const blob = await resp.blob();
+    const tDone = performance.now();
+
+    const url = URL.createObjectURL(blob);
+    player.src = url;
+    player.play().catch(() => {
+      setStatus('Audio ready — press play (browser blocked autoplay)', 'info');
+    });
+
+    player.addEventListener('loadedmetadata', () => {
+      document.getElementById('m-duration').textContent = player.duration.toFixed(2) + 's';
+    }, { once: true });
+
+    document.getElementById('m-server').textContent = (serverElapsed || '?') + 'ms';
+    document.getElementById('m-network').textContent = (tDone - t0).toFixed(0) + 'ms';
+    document.getElementById('m-ttfb').textContent = (tFirstByte - t0).toFixed(0) + 'ms';
+    document.getElementById('m-size').textContent = contentLen ? (parseInt(contentLen)/1024).toFixed(1) + 'KB' : '?';
+    document.getElementById('m-voice').textContent = voiceUsed;
+    metrics.style.display = 'grid';
+
+    setStatus(`✓ Ready — ${voiceUsed} voice, ${(blob.size/1024).toFixed(1)}KB`, 'ok');
+  } catch (err) {
+    setStatus('Error: ' + (err.message || err), 'err');
+  } finally {
+    goBtn.disabled = false;
+  }
+});
+</script>
+
+</body>
+</html>
