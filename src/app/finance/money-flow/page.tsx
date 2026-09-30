@@ -50,7 +50,7 @@ export default function MoneyFlowLedgerPage() {
       supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id,bank_account_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
     ])
 
-    const queryResults = [sales, ar, ap, expenses, returns, banks]
+    const queryResults = [sales, ar, ap, expenses, returns, banks, ledger]
     const queryNames = ['POS Sales','AR Payments','AP Payments','Expenses','Sales Returns','Bank Accounts','Ledger']
     const issues: string[] = []
     queryResults.forEach((result:any, i:number) => { if (result.error) issues.push(queryNames[i] + ' data could not be loaded: ' + (result.error.message || 'query error')) })
@@ -74,7 +74,7 @@ export default function MoneyFlowLedgerPage() {
       if (Math.abs(g.debit - g.credit) > 0.005 && !g.reversal) issues.push('Ledger group ' + group + ' is unbalanced: debit ' + money(g.debit) + ' vs credit ' + money(g.credit))
     })
 
-    setOpeningBalances((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
+    setOpeningBalances(Object.fromEntries((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
     const rows: Entry[] = []
 
     ;(sales.data || []).forEach((x:any) => {
