@@ -484,3 +484,8 @@ select:focus-visible {
 
 
 @media(max-width:767px){.erp-pos-cart .cart-item{border-radius:.875rem}.erp-pos-cart{padding-bottom:env(safe-area-inset-bottom)}}
+
+
+/* ERP2 payment task surface */
+.payment-task{background:var(--surface-1);color:var(--text-strong)}
+@media(max-width:639px){.payment-task input{font-size:1.5rem}}
