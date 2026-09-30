@@ -121,7 +121,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         paymentType = 'bank'
       } else {
         payments = [{ method: 'cash', amount: totalAmount }]
-        amountReceived = cashNum
+        amountReceived = totalAmount
       }
     } else if (mode === 'credit') {
       payments = [{ method: 'credit', amount: totalAmount }]
