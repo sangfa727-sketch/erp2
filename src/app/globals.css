@@ -380,3 +380,60 @@ select:focus-visible {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* ── Modern Material / Fluent-like control contract ─────────────────────────
+   Interaction is predictable: clear hover, visible focus, restrained elevation,
+   and a short press feedback. Navigation remains information-dense.
+*/
+.erp-topbar {
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow: 0 1px 0 rgba(15,23,42,.04);
+}
+[data-theme="dark"] .erp-topbar {
+  box-shadow: 0 1px 0 rgba(255,255,255,.04);
+}
+.material-control {
+  position: relative;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+.material-control::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(.96);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.material-control:hover::after { opacity: .035; transform: scale(1); }
+.material-control:active::after { opacity: .08; transform: scale(.98); }
+.material-control:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.mode-switcher {
+  background: var(--surface-3);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(15,23,42,.06);
+}
+[data-theme="dark"] .mode-switcher {
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.mode-switcher a {
+  color: var(--text-muted);
+}
+.mode-switcher a:hover {
+  color: var(--text-strong);
+}
+.mode-switcher a.bg-blue-600,
+.mode-switcher a.bg-purple-600 {
+  box-shadow: 0 1px 2px rgba(15,23,42,.14);
+}
+@media (prefers-reduced-motion: reduce) {
+  .material-control::after { transition: none; }
+}
