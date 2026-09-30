@@ -272,6 +272,7 @@ const NAV_WHITELIST: RegExp[] = [
   /^\/finance(\/.*)?(\?.*)?$/,
   /^\/employees(\/.*)?(\?.*)?$/,
   /^\/expenses(\/.*)?(\?.*)?$/,
+  /^\/finance\/money-flow(\/.*)?(\?.*)?$/,
   /^\/sales-return(\/.*)?(\?.*)?$/,
   /^\/shipments(\/.*)?(\?.*)?$/,
   /^\/settings(\/.*)?(\?.*)?$/,
