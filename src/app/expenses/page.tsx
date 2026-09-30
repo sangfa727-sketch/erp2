@@ -117,13 +117,12 @@ export default function ExpensesPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800">💸 {t.page_expenses}</h1>
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <header className="mb-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • EXPENSE</p><h1 className="mt-1 text-2xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဘာအတွက်? ဘယ်လောက်? ဘယ်ကပေး?</h1></div>
           <div className="flex gap-2 flex-wrap">
-            <input type="month" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }}
+            <input type="month" className="material-control min-h-[48px] px-3 rounded-xl text-sm" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }}
               className="p-2 border rounded-lg text-sm" />
-            <button onClick={openAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+            <button onClick={openAdd} className="material-control min-h-[48px] px-4 rounded-xl text-sm font-semibold bg-blue-600 text-white">
               {t.exp_add_btn}
             </button>
           </div>
@@ -174,7 +173,7 @@ export default function ExpensesPage() {
           {loading ? <p className="text-center text-gray-400 py-8">{t.loading}</p>
           : filtered.length === 0 ? <p className="text-center text-gray-400 py-8">{t.exp_no_data}</p>
           : filtered.map(e => (
-            <div key={e.id} className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-400">
+            <div key={e.id} className="material-control rounded-xl p-4 border-l-4 border-red-400">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{e.category}</span>
@@ -190,7 +189,7 @@ export default function ExpensesPage() {
             </div>
           ))}
           {filtered.length > 0 && (
-            <div className="bg-gray-50 rounded-xl p-3 text-sm font-semibold flex justify-between">
+            <div className="material-control rounded-xl p-3 text-sm font-semibold flex justify-between">
               <span>{t.exp_footer_total} ({filtered.length} {t.exp_items})</span>
               <span className="text-red-600">K {filteredTotal.toLocaleString()}</span>
             </div>
@@ -242,18 +241,18 @@ export default function ExpensesPage() {
             )}
           </table>
         </div>
-      </div>
+      </div></header>
 
       {modal.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">{modal.mode === 'add' ? t.exp_modal_add : t.exp_modal_edit}</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_date}</label>
                   <input type="date" value={d.expense_date} onChange={e => setModal(m => ({ ...m, data: { ...m.data, expense_date: e.target.value } }))}
-                    className="w-full p-2 border rounded-lg text-sm" />
+                    className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_paid_by}</label>
@@ -269,11 +268,11 @@ export default function ExpensesPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_category}</label>
                 <div className="flex gap-1">
                   <select value={d.category} onChange={e => setModal(m => ({ ...m, data: { ...m.data, category: e.target.value } }))}
-                    className="flex-1 p-2 border rounded-lg text-sm">
+                    className="pos-search min-h-[48px] flex-1 p-2 rounded-xl text-sm">
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <button type="button" onClick={() => { setShowNewCat(!showNewCat); setNewCat('') }}
-                    className="px-3 py-2 bg-green-500 text-white rounded-lg text-lg font-bold hover:bg-green-600">+</button>
+                    className="material-control min-h-[48px] min-w-[48px] bg-green-500 text-white rounded-xl text-lg font-bold">+</button>
                   {!CATEGORIES.includes(d.category) && customCats.includes(d.category) && (
                     <button type="button" onClick={() => {
                       setCustomCats(prev => prev.filter(c => c !== d.category))
@@ -316,8 +315,8 @@ export default function ExpensesPage() {
 
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={closeModal} className="flex-1 py-2 border rounded-lg text-sm hover:bg-gray-50">{t.btn_cancel}</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm disabled:opacity-50">
+              <button onClick={closeModal} className="material-control flex-1 min-h-[52px] rounded-xl text-sm">{t.btn_cancel}</button>
+              <button onClick={handleSave} disabled={saving} className="material-control flex-1 min-h-[52px] bg-blue-600 text-white rounded-xl text-sm disabled:opacity-50">
                 {saving ? t.loading : t.btn_save}
               </button>
             </div>
