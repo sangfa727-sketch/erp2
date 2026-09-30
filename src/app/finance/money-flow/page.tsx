@@ -29,6 +29,7 @@ export default function MoneyFlowLedgerPage() {
   const [openingBalances, setOpeningBalances] = useState<Record<string,number>>({})
   const [auditIssues, setAuditIssues] = useState<string[]>([])
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null)
+  const [issueFilter, setIssueFilter] = useState(false)
 
   const load = async () => {
     setLoading(true)
@@ -103,7 +104,7 @@ export default function MoneyFlowLedgerPage() {
 
   useEffect(() => { load() }, [from, to])
 
-  const filtered = useMemo(() => entries.filter(x => (filter === 'all' || x.direction === filter) && (source === 'all' || x.source === source)), [entries, filter, source])
+  const filtered = useMemo(() => entries.filter(x => (filter === 'all' || x.direction === filter) && (source === 'all' || x.source === source) && (!issueFilter || auditIssues.some(i => i.toLowerCase().includes(x.source.toLowerCase()) || i.includes(x.reference) || i.includes(x.id.slice(-8))))), [entries, filter, source, issueFilter, auditIssues])
   const totalIn = filtered.filter(x=>x.direction==='in').reduce((s,x)=>s+x.amount,0)
   const totalOut = filtered.filter(x=>x.direction==='out').reduce((s,x)=>s+x.amount,0)
   const sources = Array.from(new Set(entries.map(x=>x.source)))
@@ -156,11 +157,12 @@ export default function MoneyFlowLedgerPage() {
               <div className="font-bold" style={{color:'var(--color-text)'}}>⚠️ Audit Issues</div>
               <div className="text-xs mt-1" style={{color:'var(--color-text-secondary)'}}>Data mapping / loading anomalies that need review — not a claim of accounting error.</div>
             </div>
-            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${auditIssues.length ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{auditIssues.length ? auditIssues.length + ' review' : '✓ Clear'}</span>
+            <button onClick={()=>setIssueFilter(v=>!v)} className={`px-2.5 py-1 rounded-full text-xs font-bold ${auditIssues.length ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{auditIssues.length ? auditIssues.length + ' review' : '✓ Clear'}</button>
           </div>
           {auditIssues.length > 0 && <div className="mt-3 space-y-1.5">
             {auditIssues.slice(0,6).map((issue,i)=><div key={i} className="text-xs rounded-lg px-3 py-2 bg-orange-50 text-orange-800">{issue}</div>)}
-            {auditIssues.length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.length-6} more issues</div>}
+            {issueFilter && auditIssues.length > 0 && <div className="mt-2 text-xs font-semibold text-blue-600">Filtered to records associated with review issues</div>}
+          {auditIssues.length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.length-6} more issues</div>}
           </div>}
           {lastRefreshed && <div className="mt-2 text-[10px]" style={{color:'var(--color-text-secondary)'}}>Last refreshed: {lastRefreshed}</div>}
         </div>
