@@ -119,9 +119,6 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         payments = [{ method: 'bank', amount: totalAmount, bankAccountId: selectedBankId }]
         amountReceived = totalAmount
         paymentType = 'bank'
-        // Update bank balance
-        const ba = bankAccounts.find(b => b.id === selectedBankId)
-        if (ba) await supabase.from('bank_accounts').update({ current_balance: Number(ba.current_balance) + totalAmount }).eq('id', selectedBankId)
       } else {
         payments = [{ method: 'cash', amount: totalAmount }]
         amountReceived = cashNum
@@ -135,13 +132,6 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         { method: 'credit', amount: splitCredit },
       ]
       amountReceived = splitCashNum
-      // Update split bank balance if bank selected
-      if (splitBankId) {
-        const ba = bankAccounts.find(b => b.id === splitBankId)
-        if (ba) await supabase.from('bank_accounts').update({
-          current_balance: Number(ba.current_balance) + splitCashNum
-        }).eq('id', splitBankId)
-      }
     }
 
     await onConfirm({ totalAmount, amountReceived, customerId, customerName, paymentType, payments, bankAccountId: selectedBankId })
