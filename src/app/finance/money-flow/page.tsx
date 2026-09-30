@@ -34,6 +34,7 @@ export default function MoneyFlowLedgerPage() {
   const [resolvedIssues, setResolvedIssues] = useState<Set<string>>(new Set())
   const [ledgerDetails, setLedgerDetails] = useState<any[]>([])
   const [detailGroup, setDetailGroup] = useState<string | null>(null)
+  const [bankReconciliation, setBankReconciliation] = useState<any[]>([])
 
   const load = async () => {
     setLoading(true)
@@ -50,6 +51,16 @@ export default function MoneyFlowLedgerPage() {
       supabase.from('ledger').select('id,entry_group_id,debit,credit,ref_id,description,created_at,reversal_of_entry_group_id,bank_account_id').eq('company_id', companyId).gte('created_at', from+'T00:00:00').lte('created_at', to+'T23:59:59'),
     ])
 
+    const { data: bankLedger } = await supabase.from('ledger').select('bank_account_id,debit,credit').eq('company_id', companyId).not('bank_account_id','is',null)
+    const bankFlow = new Map<string, number>()
+    ;(bankLedger || []).forEach((x:any) => bankFlow.set(x.bank_account_id, (bankFlow.get(x.bank_account_id) || 0) + Number(x.debit || 0) - Number(x.credit || 0)))
+    setBankReconciliation((banks.data || []).map((b:any) => {
+      const opening = Number(b.opening_balance || 0)
+      const current = Number(b.current_balance || 0)
+      const ledgerNet = Number(bankFlow.get(b.id) || 0)
+      const expected = opening + ledgerNet
+      return { id:b.id, name:b.account_name, opening, current, ledgerNet, expected, difference:current-expected, status:Math.abs(current-expected) <= 0.005 ? 'reconciled' : 'legacy' }
+    }))
     const queryResults = [sales, ar, ap, expenses, returns, banks, ledger]
     const queryNames = ['POS Sales','AR Payments','AP Payments','Expenses','Sales Returns','Bank Accounts','Ledger']
     const issues: string[] = []
@@ -250,6 +261,26 @@ export default function MoneyFlowLedgerPage() {
             </div>
           )}
         </div>
+
+        {bankReconciliation.some((b:any) => b.status === 'legacy') && (
+          <div className="rounded-2xl p-4 mb-4" style={{background:'var(--color-card)',border:'1px solid #f59e0b'}}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-bold" style={{color:'var(--color-text)'}}>🏦 Bank Reconciliation Status</div>
+                <div className="text-xs mt-1" style={{color:'var(--color-text-secondary)'}}>Historical balance differences are shown for review only. ERP2 will not silently overwrite or reset bank balances.</div>
+              </div>
+              <span className="px-2 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700">LEGACY REVIEW</span>
+            </div>
+            <div className="mt-3 space-y-2">
+              {bankReconciliation.filter((b:any)=>b.status==='legacy').map((b:any)=><div key={b.id} className="rounded-xl p-3" style={{background:'var(--color-bg)'}}>
+                <div className="flex items-center justify-between gap-3"><span className="text-sm font-semibold">{b.name}</span><span className="text-xs font-bold text-orange-700">Difference {money(b.difference)}</span></div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2 text-[10px]" style={{color:'var(--color-text-secondary)'}}>
+                  <span>Opening {money(b.opening)}</span><span>Ledger net {money(b.ledgerNet)}</span><span>Expected {money(b.expected)}</span><span>Recorded {money(b.current)}</span>
+                </div>
+              </div>)}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button onClick={()=>setFilter(filter==='in'?'all':'in')} className="rounded-2xl p-4 text-left border transition-all" style={{background:'linear-gradient(135deg,#f0fdf4,#dcfce7)',borderColor:'#86efac'}}>
