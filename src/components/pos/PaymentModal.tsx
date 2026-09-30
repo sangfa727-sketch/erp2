@@ -150,19 +150,19 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
   const s = (light: string, dark: string) => light // use CSS vars instead
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-      <div className="rounded-2xl p-5 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto"
+    <div className="fixed inset-0 bg-black/60 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+      <div className="payment-task rounded-t-3xl sm:rounded-2xl p-4 sm:p-5 w-full max-w-sm shadow-2xl max-h-[92vh] overflow-y-auto"
         style={{backgroundColor: 'var(--color-card, #fff)', color: 'var(--color-text, #111827)'}}>
 
         {/* Title */}
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">{t.payment_title}</h2>
-          <button onClick={onClose} className="w-7 h-7 rounded-full flex items-center justify-center text-sm"
+          <button onClick={onClose} className="material-control w-10 h-10 rounded-xl flex items-center justify-center text-sm"
             style={{backgroundColor: 'var(--color-bg, #f9fafb)', color: 'var(--color-text-sub, #6b7280)'}}>✕</button>
         </div>
 
         {/* Total */}
-        <div className="rounded-xl p-4 mb-4 text-center"
+        <div className="pos-task-bar rounded-2xl p-4 mb-4 text-center"
           style={{backgroundColor: 'var(--color-bg, #f9fafb)', border: '1px solid var(--color-border, #e5e7eb)'}}>
           <p className="text-xs mb-1" style={{color: 'var(--color-text-sub, #6b7280)'}}>{t.payment_total}</p>
           <p className="text-3xl font-bold" style={{color: 'var(--color-primary, #2563eb)'}}>
@@ -176,7 +176,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
           style={{backgroundColor: 'var(--color-bg, #f3f4f6)'}}>
           {([['cash','💵',t.payment_cash],['credit','📒',t.payment_credit],['split','🔀',t.payment_split]] as [PayMode,string,string][]).map(([m,icon,label]) => (
             <button key={m} onClick={() => { setMode(m); setMsg(''); setUseBankTransfer(false) }}
-              className="py-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-0.5"
+              className="material-control min-h-[52px] py-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-0.5"
               style={{
                 backgroundColor: mode === m ? 'var(--color-card, #fff)' : 'transparent',
                 color: mode === m ? 'var(--color-primary, #2563eb)' : 'var(--color-text-sub, #6b7280)',
@@ -267,7 +267,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                 <p className="text-xs font-medium mb-2" style={{color: 'var(--color-text-sub, #6b7280)'}}>Customer ရွေးပါ *</p>
                 {!showCustPicker ? (
                   <button onClick={() => setShowCustPicker(true)}
-                    className="w-full p-3 rounded-xl text-sm font-medium flex items-center gap-2"
+                    className="material-control w-full min-h-[52px] p-3 rounded-xl text-sm font-medium flex items-center gap-2"
                     style={{border: '2px dashed var(--color-primary, #2563eb)', color: 'var(--color-primary, #2563eb)'}}>
                     <span>👤</span><span>Customer ရွေးရန် နှိပ်ပါ</span>
                   </button>
@@ -282,7 +282,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                     <div className="max-h-40 overflow-y-auto">
                       {filteredCusts.map(c => (
                         <button key={c.id} onClick={() => { setCustomerId(c.id); setCustomerName(c.contact_name); setShowCustPicker(false) }}
-                          className="w-full flex justify-between px-3 py-2 text-sm transition-all"
+                          className="material-control w-full min-h-[48px] flex justify-between px-3 py-2 text-sm transition-all"
                           style={{color: 'var(--color-text, #111827)'}}
                           onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-bg, #f9fafb)')}
                           onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
@@ -336,7 +336,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                     <div className="max-h-40 overflow-y-auto">
                       {filteredCusts.map(c => (
                         <button key={c.id} onClick={() => { setCustomerId(c.id); setCustomerName(c.contact_name); setShowCustPicker(false) }}
-                          className="w-full flex justify-between px-3 py-2 text-sm"
+                          className="material-control w-full min-h-[48px] flex justify-between px-3 py-2 text-sm"
                           style={{color: 'var(--color-text, #111827)'}}
                           onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-bg, #f9fafb)')}
                           onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
@@ -403,7 +403,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                   style={{borderTop: '1px solid var(--color-border, #e5e7eb)', backgroundColor: 'var(--color-card,#fff)'}}>
                   <button
                     onClick={() => setSplitBankId('')}
-                    className="w-full flex items-center gap-2 p-2 rounded-lg text-sm"
+                    className="material-control w-full min-h-[48px] flex items-center gap-2 p-2 rounded-lg text-sm"
                     style={{
                       backgroundColor: splitBankId === '' ? '#f0fdf4' : 'transparent',
                       border: splitBankId === '' ? '1px solid #bbf7d0' : '1px solid transparent',
@@ -414,7 +414,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                   </button>
                   {bankAccounts.map(b => (
                     <button key={b.id} onClick={() => setSplitBankId(b.id)}
-                      className="w-full flex items-center gap-2 p-2 rounded-lg text-sm"
+                      className="material-control w-full min-h-[48px] flex items-center gap-2 p-2 rounded-lg text-sm"
                       style={{
                         backgroundColor: splitBankId === b.id ? '#f0fdf4' : 'transparent',
                         border: splitBankId === b.id ? '1px solid #bbf7d0' : '1px solid transparent',
@@ -443,12 +443,12 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
 
         <div className="flex gap-2">
           <button onClick={onClose}
-            className="flex-1 py-3 rounded-xl text-sm font-medium"
+            className="material-control flex-1 min-h-[52px] py-3 rounded-xl text-sm font-medium"
             style={{border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}}>
             {t.cancel}
           </button>
           <button onClick={handleConfirm} disabled={loading}
-            className="flex-1 py-3 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+            className="material-control flex-1 min-h-[52px] py-3 rounded-xl text-sm font-bold text-white disabled:opacity-50"
             style={{backgroundColor: '#16a34a'}}>
             {loading ? t.payment_processing : t.payment_confirm}
           </button>
