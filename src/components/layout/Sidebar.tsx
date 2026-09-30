@@ -253,14 +253,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   return (
     <div
-      className={`${collapsed && !isSupportMode ? 'w-16' : 'w-56'} h-screen flex flex-col transition-all duration-300`}
+      className={`${collapsed && !isSupportMode ? 'w-16' : 'w-56'} erp-sidebar h-screen flex flex-col transition-all duration-300`}
       style={{
         backgroundColor: isSupportMode ? '#4C1D95' : 'var(--color-sidebar, #111827)',
       }}
     >
       {/* ── Header ── */}
       <div
-        className="flex items-center justify-between px-3 pt-4 pb-3 flex-shrink-0"
+        className="flex items-center justify-between px-3 pt-4 pb-3 flex-shrink-0 sidebar-header"
         style={{ borderBottom: `1px solid ${isSupportMode ? 'rgba(255,255,255,0.15)' : 'var(--sidebar-border, #1f2937)'}` }}
       >
         {isSupportMode ? (
@@ -284,7 +284,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
                     style={{ backgroundColor: 'var(--sidebar-hover-bg, #374151)' }}>🏢</div>
                 )}
-                <span className="font-bold text-sm truncate" style={{ color: 'var(--sidebar-title, #FFFFFF)' }}>
+                <span className="font-bold text-sm truncate sidebar-title" style={{ color: 'var(--sidebar-title, #FFFFFF)' }}>
                   {companyName}
                 </span>
               </div>
