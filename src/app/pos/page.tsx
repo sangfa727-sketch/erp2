@@ -71,6 +71,8 @@ export default function POSPage() {
       product_id: item.id, qty: item.quantity, unit_price: item.selling_price
     }))
     const grandTotal = itemsToSend.reduce((s, i) => s + i.qty * i.unit_price, 0)
+    const bankPayment = (paymentData.payments || []).find((p: any) => p.method === 'bank')
+    const normalizedPaymentType = bankPayment ? 'bank' : (paymentData.paymentType === 'credit' ? 'credit' : 'cash')
     const amountPaid = paymentData.paymentType === 'credit' ? 0 : paymentData.amountReceived
     const draft = {
       occurred_at: new Date().toISOString(),
@@ -83,6 +85,10 @@ export default function POSPage() {
         grand_total: grandTotal,
         amount_paid: amountPaid,
       },
+      payment: {
+        payment_type: normalizedPaymentType,
+        bank_account_id: bankPayment?.bankAccountId || '',
+      },
       lines: itemsToSend.map(i => ({
         product_id: i.product_id, qty: i.qty, unit_price: i.unit_price
       })),
@@ -94,7 +100,7 @@ export default function POSPage() {
       await supabase.rpc('set_staff_company', { p_company_id: posCompanyId })
     }
 
-    const { data: rpcResult, error } = await supabase.rpc('rpc_post_pos_sale_from_draft', {
+    const { data: rpcResult, error } = await supabase.rpc('rpc_post_pos_sale_from_draft_v2', {
       p_request_id: requestId, p_idempotency_key: requestId + '-pos', p_draft: draft
     })
     if (error) {
