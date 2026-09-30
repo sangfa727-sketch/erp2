@@ -30,6 +30,7 @@ export default function MoneyFlowLedgerPage() {
   const [auditIssues, setAuditIssues] = useState<string[]>([])
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null)
   const [issueFilter, setIssueFilter] = useState(false)
+  const [resolvedIssues, setResolvedIssues] = useState<Set<string>>(new Set())
 
   const load = async () => {
     setLoading(true)
@@ -117,6 +118,20 @@ export default function MoneyFlowLedgerPage() {
 
   const accountReconciliation = accountSummary.map(a => ({...a, net:a.in-a.out, expected:a.current === null ? null : a.current-a.in+a.out}))
 
+  const issueMeta = (issue: string) => {
+    const source = ['POS Sale','AR Payment','AP Payment','Expense','Sales Return'].find(s => issue.startsWith(s))
+    const href: Record<string,string> = {
+      'POS Sale':'/reports/sales',
+      'AR Payment':'/finance/ar',
+      'AP Payment':'/finance/ap',
+      'Expense':'/expenses',
+      'Sales Return':'/sales-return',
+    }
+    const type = issue.includes('could not be loaded') ? 'DATA' : issue.includes('mapping') || issue.includes('selected') ? 'MAPPING' : issue.includes('Duplicate') ? 'DUPLICATE' : 'AMOUNT'
+    const severity = issue.includes('could not be loaded') || issue.includes('exceeds') || issue.includes('non-positive') ? 'HIGH' : 'REVIEW'
+    return { source, href: source ? href[source] : undefined, type, severity }
+  }
+
   const openEntry = (x: Entry) => {
     const routes: Record<string,string> = {
       'POS Sale':'/reports/sales',
@@ -157,12 +172,25 @@ export default function MoneyFlowLedgerPage() {
               <div className="font-bold" style={{color:'var(--color-text)'}}>⚠️ Audit Issues</div>
               <div className="text-xs mt-1" style={{color:'var(--color-text-secondary)'}}>Data mapping / loading anomalies that need review — not a claim of accounting error.</div>
             </div>
-            <button onClick={()=>setIssueFilter(v=>!v)} className={`px-2.5 py-1 rounded-full text-xs font-bold ${auditIssues.length ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{auditIssues.length ? auditIssues.length + ' review' : '✓ Clear'}</button>
+            <button onClick={()=>setIssueFilter(v=>!v)} className={`px-2.5 py-1 rounded-full text-xs font-bold ${auditIssues.length ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{auditIssues.filter(i=>!resolvedIssues.has(i)).length ? auditIssues.filter(i=>!resolvedIssues.has(i)).length + ' review' : '✓ Clear'}</button>
           </div>
           {auditIssues.length > 0 && <div className="mt-3 space-y-1.5">
-            {auditIssues.slice(0,6).map((issue,i)=><div key={i} className="text-xs rounded-lg px-3 py-2 bg-orange-50 text-orange-800">{issue}</div>)}
+            {auditIssues.filter(issue => !resolvedIssues.has(issue)).slice(0,6).map((issue,i)=>{
+              const meta = issueMeta(issue)
+              return <div key={issue} className="rounded-lg px-3 py-2 bg-orange-50 text-orange-800">
+                <div className="flex items-start gap-2">
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/70">{meta.severity}</span>
+                  <span className="shrink-0 px-1.5 py-0.5 rounded text-[9px] font-bold bg-white/70">{meta.type}</span>
+                  <span className="text-xs flex-1">{issue}</span>
+                </div>
+                <div className="mt-2 flex items-center gap-2">
+                  {meta.href && <button onClick={()=>{ if(meta.href) window.location.href=meta.href }} className="text-[10px] font-semibold underline">Review {meta.source}</button>}
+                  <button onClick={()=>setResolvedIssues(prev=>new Set(prev).add(issue))} className="text-[10px] font-semibold opacity-70 hover:opacity-100">Mark reviewed</button>
+                </div>
+              </div>
+            })}
             {issueFilter && auditIssues.length > 0 && <div className="mt-2 text-xs font-semibold text-blue-600">Filtered to records associated with review issues</div>}
-          {auditIssues.length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.length-6} more issues</div>}
+            {auditIssues.filter(issue => !resolvedIssues.has(issue)).length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.filter(issue => !resolvedIssues.has(issue)).length-6} more issues</div>}
           </div>}
           {lastRefreshed && <div className="mt-2 text-[10px]" style={{color:'var(--color-text-secondary)'}}>Last refreshed: {lastRefreshed}</div>}
         </div>
