@@ -139,11 +139,8 @@ export default function PurchasesPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800">{'📥 ' + t.page_purchases}</h1>
-          <button onClick={openAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium">{t.pur_add_btn}</button>
-        </div>
+      <div className="px-3 py-4 md:p-6 max-w-6xl mx-auto">
+        <header className="mb-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • PURCHASE</p><h1 className="mt-1 text-2xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဘယ်သူ့ဆီက ဝယ်? ဘာဝယ်? လက်ခံပြီးပြီ?</h1></div><button onClick={openAdd} className="material-control min-h-[48px] px-4 rounded-xl text-sm font-semibold" style={{background:'var(--color-primary)',color:'#fff'}}>{t.pur_add_btn}</button></div></header>
 
         {/* Mobile Card View */}
         <div className="md:hidden space-y-3">
@@ -153,7 +150,7 @@ export default function PurchasesPage() {
             const bal = Number(p.grand_total)-Number(p.amount_paid)
             const expanded = expandedId === p.id
             return (
-              <div key={p.id} className="bg-white rounded-xl shadow-sm overflow-hidden">
+              <div key={p.id} className="material-control rounded-xl overflow-hidden">
                 <div className="p-4" onClick={()=>setExpandedId(expanded?null:p.id)}>
                   <div className="flex justify-between items-start">
                     <div>
@@ -239,14 +236,14 @@ export default function PurchasesPage() {
       {/* Add/Edit Modal */}
       {modal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 w-full md:max-w-2xl shadow-xl max-h-[95vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-5 w-full md:max-w-2xl shadow-xl max-h-[95vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">{modal.mode==='add'?t.pur_modal_add:t.pur_modal_edit}</h2>
 
             {/* Supplier */}
             <div className="mb-3">
               <label className="block text-xs font-medium text-gray-700 mb-1">{t.pur_col_supplier}</label>
               <select value={supplierId} onChange={e=>setSupplierId(e.target.value)}
-                className="w-full p-2.5 border rounded-lg text-sm">
+                className="material-control min-h-[48px] w-full p-2.5 rounded-xl text-sm">
                 <option value="">{t.pur_no_supplier}</option>
                 {suppliers.map(s=><option key={s.id} value={s.id}>{s.contact_name}</option>)}
               </select>
@@ -292,7 +289,7 @@ export default function PurchasesPage() {
                         <label className="text-xs text-gray-500">{t.pur_qty_label}</label>
                         <input type="text" value={l.qty}
                           onChange={e=>{const v=toEnglishNumber(e.target.value);if(/^\d*\.?\d*$/.test(v))updateLine(i,'qty',v)}}
-                          className="w-full p-2 border rounded text-sm" placeholder={t.pur_qty_ph} />
+                          className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder={t.pur_qty_ph} />
                       </div>
                       <div>
                         <label className="text-xs text-gray-500">{t.pur_unit_label}</label>
@@ -315,7 +312,7 @@ export default function PurchasesPage() {
                 ))}
               </div>
               <button onClick={()=>setLines([...lines,{product_id:'',product_name:'',qty:'',unit_price:'',unit:'ခု'}])}
-                className="mt-2 w-full py-2 border-2 border-dashed border-gray-300 text-gray-500 rounded-lg text-sm hover:border-blue-400 hover:text-blue-500">
+                className="material-control mt-2 w-full min-h-[48px] border-2 border-dashed rounded-xl text-sm">
                 + ကုန်ပစ္စည်း ထပ်ထည့်
               </button>
             </div>
@@ -349,9 +346,9 @@ export default function PurchasesPage() {
 
             {msg&&<p className={'text-sm mb-3 '+(msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}
             <div className="flex gap-2">
-              <button onClick={()=>setModal(null)} className="flex-1 py-2.5 border rounded-lg text-sm">{t.btn_cancel}</button>
+              <button onClick={()=>setModal(null)} className="material-control flex-1 min-h-[52px] rounded-xl text-sm">{t.btn_cancel}</button>
               <button onClick={handleSave} disabled={saving}
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-lg text-sm disabled:opacity-50">
+                className="material-control flex-1 min-h-[52px] bg-blue-600 text-white rounded-xl text-sm disabled:opacity-50">
                 {saving?t.settings_saving:'✅ ' + t.btn_save}
               </button>
             </div>
