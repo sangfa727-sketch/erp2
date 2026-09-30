@@ -12,12 +12,12 @@ import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/Mon
 interface Expense {
   id: string; expense_date: string; category: string
   description: string; amount: number; paid_by: string
-  ref_type: string; created_at: string
+  ref_type: string; bank_account_id: string | null; created_at: string
 }
 
 const EMPTY = {
   id: '', expense_date: new Date().toISOString().split('T')[0],
-  category: '', description: '', amount: '', paid_by: 'cash', ref_type: 'general'
+  category: '', description: '', amount: '', paid_by: 'cash', bank_account_id: '', ref_type: 'general'
 }
 
 export default function ExpensesPage() {
@@ -30,6 +30,7 @@ export default function ExpensesPage() {
   ]
 
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [bankAccounts, setBankAccounts] = useState<{id:string;account_name:string;current_balance:number}[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<{ open: boolean; mode: 'add'|'edit'; data: any }>({ open: false, mode: 'add', data: EMPTY })
   const [saving, setSaving] = useState(false)
@@ -54,8 +55,12 @@ export default function ExpensesPage() {
       .gte('expense_date', start).lte('expense_date', end)
       .order('expense_date', { ascending: false })
     if (cid) q = q.eq('company_id', cid)
-    const { data } = await q
+    const [{ data }, { data: banks }] = await Promise.all([
+      q,
+      supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', cid || '').eq('is_active', true).eq('is_deleted', false).order('account_name')
+    ])
     setExpenses(data || [])
+    setBankAccounts(banks || [])
     setLoading(false)
   }
 
@@ -91,7 +96,7 @@ export default function ExpensesPage() {
     const payload = {
       company_id: companyId, expense_date: d.expense_date, category: d.category,
       description: d.description || null, amount: Number(d.amount),
-      paid_by: d.paid_by, ref_type: d.ref_type,
+      paid_by: d.paid_by, bank_account_id: d.paid_by === 'bank' ? (d.bank_account_id || null) : null, ref_type: d.ref_type,
     }
     if (modal.mode === 'add') {
       const { error } = await supabase.from('expenses').insert(payload)
@@ -258,7 +263,7 @@ export default function ExpensesPage() {
                 <div>
                   <MoneyFlowMethodPicker
                     value={d.paid_by}
-                    onChange={(value) => setModal(m => ({ ...m, data: { ...m.data, paid_by: value } }))}
+                    onChange={(value) => setModal(m => ({ ...m, data: { ...m.data, paid_by: value, bank_account_id: value === 'bank' ? m.data.bank_account_id : '' } }))}
                     title="Expense Payment Route"
                     options={[
                       { value: 'cash', icon: '💵', label: t.exp_paid_cash, description: 'Cash balance လျော့မည်' },
@@ -267,6 +272,17 @@ export default function ExpensesPage() {
                   />
                 </div>
               </div>
+
+              {d.paid_by === 'bank' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Bank Account</label>
+                  <select value={d.bank_account_id || ''} onChange={e => setModal(m => ({ ...m, data: { ...m.data, bank_account_id: e.target.value } }))}
+                    className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
+                    <option value="">Bank account ရွေးပါ</option>
+                    {bankAccounts.map(b => <option key={b.id} value={b.id}>{b.account_name} · K {Number(b.current_balance || 0).toLocaleString()}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_category}</label>
@@ -320,9 +336,9 @@ export default function ExpensesPage() {
                 direction="out"
                 amount={Number(d.amount || 0)}
                 routeLabel={d.paid_by === 'bank' ? 'Expense → Bank Account' : 'Expense → Cash'}
-                accountLabel={d.paid_by === 'bank' ? 'Bank Account' : 'Cash'}
+                accountLabel={d.paid_by === 'bank' ? (bankAccounts.find(b => b.id === d.bank_account_id)?.account_name || 'Bank Account') : 'Cash'}
                 helper={d.paid_by === 'bank'
-                  ? 'Bank route ကို ရွေးထားသည်။ Account-level balance update ကို expense schema မှာ bank_account_id မရှိသေးသောကြောင့် ဒီအဆင့်မှာ UI flow အဖြစ်သာ ပြထားသည်။'
+                  ? (d.bank_account_id ? 'ရွေးထားသော bank account ကို expense record နှင့် ချိတ်ဆက်မည်။' : 'Bank account ရွေးပါ။')
                   : 'Expense သိမ်းသောအခါ cash expense အဖြစ် မှတ်တမ်းတင်မည်။'}
               />
             </div>
