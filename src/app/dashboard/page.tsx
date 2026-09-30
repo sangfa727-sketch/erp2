@@ -6,6 +6,7 @@ import { getCompanyId } from '@/lib/getCompanyId'
 import AppLayout from '@/components/layout/AppLayout'
 import Link from 'next/link'
 import { useI18n } from '@/lib/i18n'
+import { MoneyFlowOverview } from '@/components/finance/MoneyFlowUX'
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
@@ -13,7 +14,7 @@ export default function DashboardPage() {
     todaySales: 0, todayCount: 0,
     monthSales: 0, monthProfit: 0,
     totalProducts: 0, lowStock: 0,
-    ar: 0, ap: 0, monthExpenses: 0,
+    ar: 0, ap: 0, monthExpenses: 0, bankBalance: 0, activeAccounts: 0,
   })
   const [topProducts, setTopProducts] = useState<any[]>([])
   const [lowStockItems, setLowStockItems] = useState<any[]>([])
@@ -28,7 +29,7 @@ export default function DashboardPage() {
       const filter = (q: any) => cid ? q.eq('company_id', cid) : q
       const [
         { data: todayTxns }, { data: monthTxns }, { data: monthItems },
-        { data: prods }, { data: lowProds }, { data: contacts }, { data: expenses },
+        { data: prods }, { data: lowProds }, { data: contacts }, { data: expenses }, { data: bankAccounts },
       ] = await Promise.all([
         filter(supabase.from('transactions').select('total_amount')).gte('created_at', today),
         filter(supabase.from('transactions').select('total_amount')).gte('created_at', monthStart),
@@ -37,6 +38,7 @@ export default function DashboardPage() {
         filter(supabase.from('products').select('id,name,stock_qty,reorder_level')).eq('is_deleted', false).lt('stock_qty', 10).order('stock_qty').limit(5),
         filter(supabase.from('contacts').select('contact_type,current_balance')).eq('is_deleted', false),
         filter(supabase.from('expenses').select('amount')).gte('created_at', monthStart),
+        filter(supabase.from('bank_accounts').select('current_balance,is_active,is_deleted')),
       ])
       const todaySales = (todayTxns||[]).reduce((s:number,t:any)=>s+Number(t.total_amount),0)
       const todayCount = (todayTxns||[]).length
@@ -48,6 +50,8 @@ export default function DashboardPage() {
       const lowStock = (prods||[]).filter((p:any)=>Number(p.stock_qty)<=Number(p.reorder_level||5)).length
       const ar = (contacts||[]).filter((c:any)=>['Customer','Both'].includes(c.contact_type)).reduce((s:number,c:any)=>s+Number(c.current_balance||0),0)
       const ap = (contacts||[]).filter((c:any)=>['Supplier','Both'].includes(c.contact_type)).reduce((s:number,c:any)=>s+Number(c.current_balance||0),0)
+      const activeBankAccounts = (bankAccounts||[]).filter((b:any)=>b.is_active !== false && b.is_deleted !== true)
+      const bankBalance = activeBankAccounts.reduce((s:number,b:any)=>s+Number(b.current_balance||0),0)
       const prodMap: any = {}
       ;(monthItems||[]).forEach((i:any)=>{
         const pid = i.product_id
@@ -56,7 +60,7 @@ export default function DashboardPage() {
         prodMap[pid].revenue+=Number(i.unit_price)*Number(i.quantity)
       })
       const top5 = Object.values(prodMap).sort((a:any,b:any)=>b.revenue-a.revenue).slice(0,5)
-      setStats({todaySales,todayCount,monthSales,monthProfit,totalProducts,lowStock,ar,ap,monthExpenses})
+      setStats({todaySales,todayCount,monthSales,monthProfit,totalProducts,lowStock,ar,ap,monthExpenses,bankBalance,activeAccounts:activeBankAccounts.length})
       setTopProducts(top5)
       setLowStockItems(lowProds||[])
       setLoading(false)
@@ -205,6 +209,19 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
+            <section className="mb-5">
+              <MoneyFlowOverview
+                totalBalance={stats.bankBalance}
+                activeAccounts={stats.activeAccounts}
+              />
+              <div className="mt-2 flex flex-wrap gap-2 text-[11px]" style={{color:'var(--color-text-secondary)'}}>
+                <Link href="/finance/bank-accounts" className="material-control rounded-full px-3 py-1.5">🏦 Accounts</Link>
+                <Link href="/finance/ar" className="material-control rounded-full px-3 py-1.5">↗ AR Money In</Link>
+                <Link href="/finance/ap" className="material-control rounded-full px-3 py-1.5">↘ AP Money Out</Link>
+                <Link href="/expenses" className="material-control rounded-full px-3 py-1.5">− Expenses</Link>
+              </div>
+            </section>
+
             <section className="grid grid-cols-2 md:grid-cols-4 gap-2.5 md:gap-3 mb-5">
               {[
                 [t.today_revenue, 'K ' + stats.todaySales.toLocaleString(), stats.todayCount + ' ' + t.transactions, '/reports/sales'],
