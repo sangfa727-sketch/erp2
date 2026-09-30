@@ -27,6 +27,8 @@ export default function MoneyFlowLedgerPage() {
   const [from, setFrom] = useState(() => new Date().toISOString().slice(0,7) + '-01')
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10))
   const [openingBalances, setOpeningBalances] = useState<Record<string,number>>({})
+  const [auditIssues, setAuditIssues] = useState<string[]>([])
+  const [lastRefreshed, setLastRefreshed] = useState<string | null>(null)
 
   const load = async () => {
     setLoading(true)
@@ -42,7 +44,15 @@ export default function MoneyFlowLedgerPage() {
       supabase.from('bank_accounts').select('id,account_name').eq('company_id', companyId).eq('is_deleted', false),
     ])
 
+    const queryResults = [sales, ar, ap, expenses, returns, banks]
+    const queryNames = ['POS Sales','AR Payments','AP Payments','Expenses','Sales Returns','Bank Accounts']
+    const issues: string[] = []
+    queryResults.forEach((result:any, i:number) => { if (result.error) issues.push(queryNames[i] + ' data could not be loaded: ' + (result.error.message || 'query error')) })
     const bankMap = new Map((banks.data || []).map((b:any) => [b.id, b.account_name]))
+    ;(ar.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AR Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
+    ;(ap.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AP Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
+    ;(returns.data || []).forEach((x:any) => { if (x.refund_method !== 'credit' && x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
+    ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank') issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank but has no account-level mapping in the current expense record') })
     setOpeningBalances(Object.fromEntries((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
     const rows: Entry[] = []
 
@@ -59,7 +69,15 @@ export default function MoneyFlowLedgerPage() {
     })
 
     rows.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    const seen = new Set<string>()
+    rows.forEach(x => {
+      const key = x.source + '|' + x.id + '|' + x.amount + '|' + String(x.date).slice(0,10)
+      if (seen.has(key)) issues.push('Duplicate ledger row detected for ' + x.source + ' ' + x.reference)
+      seen.add(key)
+    })
+    setAuditIssues(Array.from(new Set(issues)))
     setEntries(rows)
+    setLastRefreshed(new Date().toLocaleString())
     setLoading(false)
   }
 
@@ -110,6 +128,21 @@ export default function MoneyFlowLedgerPage() {
             <label className="text-xs font-semibold" style={{color:'var(--color-text-secondary)'}}>To</label>
             <input type="date" value={to} onChange={e=>setTo(e.target.value)} className="w-full mt-2 p-2.5 rounded-xl" style={{background:'var(--color-bg)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}/>
           </div>
+        </div>
+
+        <div className="rounded-2xl p-4 mb-4" style={{background:'var(--color-card)',border:'1px solid var(--color-border)'}}>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="font-bold" style={{color:'var(--color-text)'}}>⚠️ Audit Issues</div>
+              <div className="text-xs mt-1" style={{color:'var(--color-text-secondary)'}}>Data mapping / loading anomalies that need review — not a claim of accounting error.</div>
+            </div>
+            <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${auditIssues.length ? 'bg-orange-100 text-orange-700' : 'bg-green-100 text-green-700'}`}>{auditIssues.length ? auditIssues.length + ' review' : '✓ Clear'}</span>
+          </div>
+          {auditIssues.length > 0 && <div className="mt-3 space-y-1.5">
+            {auditIssues.slice(0,6).map((issue,i)=><div key={i} className="text-xs rounded-lg px-3 py-2 bg-orange-50 text-orange-800">{issue}</div>)}
+            {auditIssues.length > 6 && <div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>+{auditIssues.length-6} more issues</div>}
+          </div>}
+          {lastRefreshed && <div className="mt-2 text-[10px]" style={{color:'var(--color-text-secondary)'}}>Last refreshed: {lastRefreshed}</div>}
         </div>
 
         <div className="grid grid-cols-2 gap-3 mb-4">
