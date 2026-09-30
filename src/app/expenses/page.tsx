@@ -7,6 +7,7 @@ import { toEnglishNumber } from '@/lib/utils'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface Expense {
   id: string; expense_date: string; category: string
@@ -255,12 +256,15 @@ export default function ExpensesPage() {
                     className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_paid_by}</label>
-                  <select value={d.paid_by} onChange={e => setModal(m => ({ ...m, data: { ...m.data, paid_by: e.target.value } }))}
-                    className="w-full p-2 border rounded-lg text-sm">
-                    <option value="cash">{t.exp_paid_cash}</option>
-                    <option value="bank">{t.exp_paid_bank}</option>
-                  </select>
+                  <MoneyFlowMethodPicker
+                    value={d.paid_by}
+                    onChange={(value) => setModal(m => ({ ...m, data: { ...m.data, paid_by: value } }))}
+                    title="Expense Payment Route"
+                    options={[
+                      { value: 'cash', icon: '💵', label: t.exp_paid_cash, description: 'Cash balance လျော့မည်' },
+                      { value: 'bank', icon: '🏦', label: t.exp_paid_bank, description: 'Bank route ဖြင့် ပေးချေမည်' },
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -311,6 +315,16 @@ export default function ExpensesPage() {
                   onChange={e => { const v = toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setModal(m => ({ ...m, data: { ...m.data, amount: v } })) }}
                   className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
               </div>
+
+              <MoneyFlowImpact
+                direction="out"
+                amount={Number(d.amount || 0)}
+                routeLabel={d.paid_by === 'bank' ? 'Expense → Bank Account' : 'Expense → Cash'}
+                accountLabel={d.paid_by === 'bank' ? 'Bank Account' : 'Cash'}
+                helper={d.paid_by === 'bank'
+                  ? 'Bank route ကို ရွေးထားသည်။ Account-level balance update ကို expense schema မှာ bank_account_id မရှိသေးသောကြောင့် ဒီအဆင့်မှာ UI flow အဖြစ်သာ ပြထားသည်။'
+                  : 'Expense သိမ်းသောအခါ cash expense အဖြစ် မှတ်တမ်းတင်မည်။'}
+              />
             </div>
 
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
