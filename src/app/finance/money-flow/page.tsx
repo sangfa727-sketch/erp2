@@ -116,6 +116,13 @@ export default function MoneyFlowLedgerPage() {
       if (seen.has(key)) issues.push('Potential duplicate ledger row for ' + x.source + ' ' + x.reference + ' — review matching date, amount and reference')
       seen.add(key)
     })
+    const { data: integrity } = await supabase.rpc('rpc_reconcile_company_money_flow')
+    if (integrity) setIntegritySummary(integrity)
+    if (integrity?.transactions_ledger_link_missing_but_source_ledger_exists) issues.push('Legacy Sales: ledger exists but source ledger link is missing — candidate for source-level repair')
+    if (integrity?.purchases_ledger_link_missing_but_exact_single_group) issues.push('Legacy Purchases: exact single ledger group detected — safely linked historical records')
+    if (integrity?.purchases_ledger_link_missing_but_source_ledger_exists) issues.push('Legacy Purchases: source ledger exists but requires manual reconciliation')
+    if (integrity?.posted_sales_without_ledger) issues.push('Legacy Sales: posted sales without ledger remain for manual review')
+    if (integrity?.purchases_received_without_ledger) issues.push('Legacy Purchases: received purchases without ledger remain for manual review')
     setAuditIssues(Array.from(new Set(issues)))
     setEntries(rows)
     setLastRefreshed(new Date().toLocaleString())
@@ -190,6 +197,20 @@ export default function MoneyFlowLedgerPage() {
             <input type="date" value={to} onChange={e=>setTo(e.target.value)} className="w-full mt-2 p-2.5 rounded-xl" style={{background:'var(--color-bg)',color:'var(--color-text)',border:'1px solid var(--color-border)'}}/>
           </div>
         </div>
+
+        {integritySummary && (
+          <div className="rounded-2xl p-4 mb-4" style={{background:'var(--color-card)',border:'1px solid var(--color-border)'}}>
+            <div className="flex items-center justify-between mb-3">
+              <div><div className="font-bold" style={{color:'var(--color-text)'}}>🧾 Legacy Accounting Status</div><div className="text-xs mt-1" style={{color:'var(--color-text-secondary)'}}>Historical records are classified from source/ledger evidence; nothing is silently reconstructed.</div></div>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <div className="rounded-xl p-3" style={{background:'var(--color-bg)'}}><div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>Sales · manual</div><div className="text-lg font-bold">{integritySummary.posted_sales_without_ledger ?? 0}</div></div>
+              <div className="rounded-xl p-3" style={{background:'var(--color-bg)'}}><div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>Sales · repair candidate</div><div className="text-lg font-bold">{integritySummary.transactions_ledger_link_missing_but_source_ledger_exists ?? 0}</div></div>
+              <div className="rounded-xl p-3" style={{background:'var(--color-bg)'}}><div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>Purchases · manual</div><div className="text-lg font-bold">{integritySummary.purchases_received_without_ledger ?? 0}</div></div>
+              <div className="rounded-xl p-3" style={{background:'var(--color-bg)'}}><div className="text-[10px]" style={{color:'var(--color-text-secondary)'}}>Bank · mismatch</div><div className="text-lg font-bold">{integritySummary.bank_balance_mismatch ?? 0}</div></div>
+            </div>
+          </div>
+        )}
 
         <div className="rounded-2xl p-4 mb-4" style={{background:'var(--color-card)',border:'1px solid var(--color-border)'}}>
           <div className="flex items-center justify-between gap-3">
