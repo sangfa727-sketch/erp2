@@ -28,6 +28,7 @@ export default function MoneyFlowLedgerPage() {
   const [to, setTo] = useState(() => new Date().toISOString().slice(0,10))
   const [openingBalances, setOpeningBalances] = useState<Record<string,number>>({})
   const [auditIssues, setAuditIssues] = useState<string[]>([])
+  const [integritySummary, setIntegritySummary] = useState<any>(null)
   const [lastRefreshed, setLastRefreshed] = useState<string | null>(null)
   const [issueFilter, setIssueFilter] = useState(false)
   const [resolvedIssues, setResolvedIssues] = useState<Set<string>>(new Set())
