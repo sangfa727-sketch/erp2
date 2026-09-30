@@ -137,8 +137,8 @@ export default function APPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">📤 {t.ap}</h1>
           {filterSupplier && (
             <button onClick={() => setFilterSupplier('')} className="text-sm text-blue-600 hover:underline px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
@@ -148,7 +148,7 @@ export default function APPage() {
         </div>
 
         {/* Total AP */}
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <div className="material-control rounded-xl p-4 mb-4">
           <div className="text-sm text-red-600 mb-1">📤 {t.ap_total}</div>
           <div className="text-3xl font-bold text-red-700">K {totalAP.toLocaleString()}</div>
           <div className="text-xs text-red-500 mt-1">{supplierList.length} Supplier</div>
@@ -156,7 +156,7 @@ export default function APPage() {
 
         {!filterSupplier ? (
           /* Supplier List View */
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+          <div className="material-control rounded-xl overflow-hidden mb-6">
             <div className="p-4 border-b bg-gray-50">
               <h2 className="font-bold text-gray-700">{t.ap_supplier_list}</h2>
             </div>
@@ -208,7 +208,7 @@ export default function APPage() {
         ) : (
           /* Selected Supplier Detail View */
           <div>
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+            <div className="material-control rounded-xl overflow-hidden mb-6">
               <div className="p-4 border-b bg-red-50 flex justify-between items-center">
                 <div>
                   <h2 className="font-bold text-gray-800 text-lg">🏪 {selectedSupplierData?.name}</h2>
@@ -267,7 +267,7 @@ export default function APPage() {
             </div>
 
             {/* Payment History */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="material-control rounded-xl overflow-hidden">
               <div className="p-4 border-b bg-gray-50">
                 <h2 className="font-bold text-gray-700">{t.ap_history}</h2>
               </div>
@@ -304,7 +304,7 @@ export default function APPage() {
       {/* Pay Modal */}
       {modal.open && modal.purchase && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-2">{t.ap_modal_title}</h2>
             <div className="bg-red-50 rounded-lg p-3 mb-4 text-sm">
               <p className="font-medium text-gray-800">🏪 {(modal.purchase.supplier as any)?.contact_name}</p>
@@ -322,7 +322,7 @@ export default function APPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
-                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_payment_method}</label>
@@ -334,7 +334,7 @@ export default function APPage() {
               {payMethod === 'bank' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_bank_account}</label>
-                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
+                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
                     <option value="">{t.ap_select}</option>
                     {bankAccounts.map(b => <option key={b.id} value={b.id}>{(b.account_type as any)?.icon} {b.account_name}</option>)}
                   </select>
@@ -344,11 +344,11 @@ export default function APPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_amount}</label>
                 <input type="text" inputMode="numeric" value={amount}
                   onChange={e => { const v = toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setAmount(v) }}
-                  className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_notes}</label>
-                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
             </div>
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}
