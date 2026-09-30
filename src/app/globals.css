@@ -481,3 +481,6 @@ select:focus-visible {
 @media(min-width:1024px){.pos-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:767px){.pos-task-bar{border-left:0;border-right:0;border-radius:0}.pos-product-card{min-height:96px}}
 [data-theme=dark] .pos-task-bar,[data-theme=dark] .pos-product-card{box-shadow:0 1px 3px rgba(0,0,0,.28)}
+
+
+@media(max-width:767px){.erp-pos-cart .cart-item{border-radius:.875rem}.erp-pos-cart{padding-bottom:env(safe-area-inset-bottom)}}
