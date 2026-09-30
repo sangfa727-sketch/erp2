@@ -5,6 +5,7 @@ import { getCompanyId } from '@/lib/getCompanyId'
 import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 export default function SalesReturnPage() {
   const supabase = createClient() // TODO: use getDb for RLS // TODO: use getDb for RLS // TODO: use getDb for RLS // TODO: use getDb for RLS
@@ -264,32 +265,25 @@ export default function SalesReturnPage() {
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-2 block">{tAny.sr_refund_label}</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {val:'credit',icon:'💳',label:tAny.sr_credit,desc:tAny.sr_credit_desc},
-                    {val:'cash',  icon:'💵',label:tAny.sr_cash,  desc:tAny.sr_cash_desc},
-                  ].map(opt=>(
-                    <button key={opt.val} onClick={()=>setModal({...modal,refund_method:opt.val})}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${modal.refund_method===opt.val?'border-blue-500 bg-blue-50':'border-gray-200'}`}>
-                      <p className="text-lg mb-1">{opt.icon}</p>
-                      <p className="text-sm font-medium">{opt.label}</p>
-                      <p className="text-xs text-gray-500">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={modal.refund_method}
+                onChange={(value) => setModal({...modal, refund_method: value})}
+                title={tAny.sr_refund_label}
+                options={[
+                  { value:'credit', icon:'💳', label:tAny.sr_credit, description:tAny.sr_credit_desc },
+                  { value:'cash', icon:'💵', label:tAny.sr_cash, description:tAny.sr_cash_desc },
+                ]}
+              />
 
               {modal.refund_method==='cash' && (
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Cash/Bank Account *</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-600 block">Cash/Bank Account *</label>
                   <select value={modal.bank_account_id} onChange={e=>setModal({...modal,bank_account_id:e.target.value})}
-                    className="w-full p-2 border rounded-xl text-sm">
+                    className="w-full min-h-11 p-2.5 border rounded-xl text-sm bg-white">
                     <option value="">{tAny.sr_select}</option>
                     {banks.map(b=><option key={b.id} value={b.id}>{b.account_name}</option>)}
                   </select>
-                  <p className="text-xs text-orange-500 mt-1">⚠️ {tAny.sr_cash_warning}: {calcTotal(modal.items).toLocaleString()} Ks</p>
+                  <p className="text-xs text-orange-500">⚠️ {tAny.sr_cash_warning}: {calcTotal(modal.items).toLocaleString()} Ks</p>
                 </div>
               )}
 
@@ -298,6 +292,18 @@ export default function SalesReturnPage() {
                   💳 {tAny.sr_credit_note}: {calcTotal(modal.items).toLocaleString()} Ks
                 </div>
               )}
+
+              <MoneyFlowImpact
+                direction="out"
+                amount={calcTotal(modal.items)}
+                routeLabel={modal.refund_method==='credit' ? (tAny.sr_credit || 'Customer Credit') : (tAny.sr_cash || 'Cash')}
+                accountLabel={modal.refund_method==='cash'
+                  ? (banks.find((b:any) => b.id === modal.bank_account_id)?.account_name || tAny.sr_select)
+                  : (modal.customer_id ? (customers.find((c:any) => c.id === modal.customer_id)?.contact_name || 'Customer') : undefined)}
+                helper={modal.refund_method==='cash'
+                  ? 'This refund reduces the selected account balance.'
+                  : 'This refund is recorded as customer credit.'}
+              />
 
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">{tAny.sr_note}</label>
