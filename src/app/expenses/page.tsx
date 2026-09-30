@@ -12,7 +12,7 @@ import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/Mon
 interface Expense {
   id: string; expense_date: string; category: string
   description: string; amount: number; paid_by: string
-  ref_type: string; bank_account_id: string | null; created_at: string
+  ref_type: string; bank_account_id: string | null; ledger_entry_group_id: string | null; is_voided: boolean; created_at: string
 }
 
 const EMPTY = {
@@ -83,25 +83,41 @@ export default function ExpensesPage() {
   }
 
   const openAdd = () => setModal({ open: true, mode: 'add', data: { ...EMPTY, category: CATEGORIES[0] } })
-  const openEdit = (e: Expense) => setModal({ open: true, mode: 'edit', data: { ...e, amount: e.amount.toString() } })
+  const openEdit = (e: Expense) => {
+    if (e.ledger_entry_group_id) { setMsg('Posted expense ကို edit မလုပ်နိုင်ပါ။ Reversal flow သုံးရပါမည်။'); return }
+    setModal({ open: true, mode: 'edit', data: { ...e, amount: e.amount.toString() } })
+  }
   const closeModal = () => { setModal({ open: false, mode: 'add', data: EMPTY }); setMsg('') }
 
   const handleSave = async () => {
     const d = modal.data
     if (!d.amount || Number(d.amount) <= 0) { setMsg(t.exp_err_amount); return }
+    if (d.paid_by === 'bank' && !d.bank_account_id) { setMsg('Bank account ရွေးပါ'); return }
     setSaving(true); setMsg('')
-    const { data: profileData } = await supabase.from('profiles').select('company_id')
-    const companyId = profileData?.[0]?.company_id
+    const companyId = await getCompanyId()
     if (!companyId) { setMsg(t.exp_err_company); setSaving(false); return }
-    const payload = {
-      company_id: companyId, expense_date: d.expense_date, category: d.category,
-      description: d.description || null, amount: Number(d.amount),
-      paid_by: d.paid_by, bank_account_id: d.paid_by === 'bank' ? (d.bank_account_id || null) : null, ref_type: d.ref_type,
-    }
+
     if (modal.mode === 'add') {
-      const { error } = await supabase.from('expenses').insert(payload)
+      const { error } = await supabase.rpc('rpc_record_expense_v2', {
+        p_expense_date: d.expense_date,
+        p_category: d.category,
+        p_description: d.description || null,
+        p_amount: Number(d.amount),
+        p_paid_by: d.paid_by,
+        p_bank_account_id: d.paid_by === 'bank' ? d.bank_account_id : null,
+        p_ref_type: d.ref_type,
+        p_ref_id: null,
+      })
       if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
     } else {
+      if (d.ledger_entry_group_id) {
+        setMsg('Posted expense ကို edit မလုပ်နိုင်ပါ။'); setSaving(false); return
+      }
+      const payload = {
+        company_id: companyId, expense_date: d.expense_date, category: d.category,
+        description: d.description || null, amount: Number(d.amount),
+        paid_by: d.paid_by, bank_account_id: d.paid_by === 'bank' ? (d.bank_account_id || null) : null, ref_type: d.ref_type,
+      }
       const { error } = await supabase.from('expenses').update(payload).eq('id', d.id)
       if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
     }
@@ -112,6 +128,11 @@ export default function ExpensesPage() {
   }
 
   const handleDelete = (id: string) => {
+    const row = expenses.find(e => e.id === id)
+    if (row?.ledger_entry_group_id) {
+      setMsg('Posted expense ကို delete မလုပ်နိုင်ပါ။ Reversal flow သုံးရပါမည်.')
+      return
+    }
     showConfirm(t.exp_delete_confirm, async () => {
       await supabase.from('expenses').delete().eq('id', id)
       await fetchAll()
