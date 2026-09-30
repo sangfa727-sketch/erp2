@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import { toEnglishNumber } from '@/lib/utils'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface CreditPurchase {
   id: string
@@ -324,13 +325,27 @@ export default function APPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
                 <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_payment_method}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setPayMethod('cash')} className={`py-2 rounded-lg text-sm border ${payMethod==='cash'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ap_cash}</button>
-                  <button onClick={() => setPayMethod('bank')} className={`py-2 rounded-lg text-sm border ${payMethod==='bank'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ap_bank}</button>
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={payMethod}
+                onChange={setPayMethod}
+                title={t.ap_payment_method}
+                options={[
+                  { value:'cash', icon:'💵', label:t.ap_cash, description:'Pay directly as cash.' },
+                  { value:'bank', icon:'🏦', label:t.ap_bank, description:'Pay from a bank account.' },
+                ]}
+              />
+              <MoneyFlowImpact
+                direction="out"
+                amount={Number(amount || 0)}
+                routeLabel={payMethod === 'cash' ? t.ap_cash : t.ap_bank}
+                accountLabel={payMethod === 'bank'
+                  ? (bankAccounts.find(b => b.id === bankAccountId)?.account_name || t.ap_bank_account)
+                  : undefined}
+                helper={payMethod === 'bank'
+                  ? 'This payment reduces the selected account balance.'
+                  : 'This payment is recorded as cash paid out.'}
+              />
+
               {payMethod === 'bank' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_bank_account}</label>
