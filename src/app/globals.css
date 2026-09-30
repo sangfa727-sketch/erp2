@@ -437,3 +437,31 @@ select:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .material-control::after { transition: none; }
 }
+
+
+/* ── ERP2 Mobile-first usability layer ──────────────────────────────────────
+   Dense where it helps scanning; generous only for primary actions.
+*/
+.pos-mobile-shell {
+  background: var(--color-bg);
+}
+.pos-mobile-bar {
+  background: var(--color-card);
+  color: var(--text-strong);
+  box-shadow: 0 1px 0 rgba(15,23,42,.05);
+}
+[data-theme="dark"] .pos-mobile-bar {
+  box-shadow: 0 1px 0 rgba(255,255,255,.05);
+}
+@media (max-width: 767px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+  .erp-sidebar {
+    box-shadow: 12px 0 32px rgba(0,0,0,.22);
+  }
+  .pos-mobile-shell .product-card,
+  .pos-mobile-shell button[class*="rounded-xl"] {
+    min-height: 48px;
+  }
+}
