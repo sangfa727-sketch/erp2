@@ -93,43 +93,20 @@ export default function APPage() {
     if (!amount || Number(amount) <= 0) { setMsg(t.ap_err_amount); return }
     setSaving(true); setMsg('')
 
-    const companyId = await getCompanyId()
     const payAmt = Number(amount)
     const maxAmt = Number(modal.purchase.items_total) - Number(modal.purchase.amount_paid)
     const actualAmt = Math.min(payAmt, maxAmt)
 
-    // Insert AP payment
-    const { error } = await supabase.from('ap_payments').insert({
-      company_id: companyId,
-      contact_id: modal.purchase.supplier_id,
-      purchase_id: modal.purchase.id,
-      payment_date: payDate,
-      amount: actualAmt,
-      payment_method: payMethod,
-      bank_account_id: payMethod !== 'cash' ? bankAccountId || null : null,
-      notes: notes || null,
+    const { error } = await supabase.rpc('rpc_record_ap_payment_v2', {
+      p_contact_id: modal.purchase.supplier_id,
+      p_amount: actualAmt,
+      p_payment_method: payMethod,
+      p_purchase_id: modal.purchase.id,
+      p_bank_account_id: payMethod === 'bank' ? (bankAccountId || null) : null,
+      p_payment_date: payDate,
+      p_notes: notes || null,
     })
     if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
-
-    // Update purchase amount_paid
-    const newPaid = Number(modal.purchase.amount_paid) + actualAmt
-    await supabase.from('purchases').update({ amount_paid: newPaid }).eq('id', modal.purchase.id)
-
-    // Update supplier balance
-    if (modal.purchase.supplier_id) {
-      const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id', modal.purchase.supplier_id).single()
-      if (contact) {
-        await supabase.from('contacts').update({
-          current_balance: Math.max(0, Number(contact.current_balance) - actualAmt)
-        }).eq('id', modal.purchase.supplier_id)
-      }
-    }
-
-    // Update bank account balance
-    if (payMethod !== 'cash' && bankAccountId) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id', bankAccountId).single()
-      if (ba) await supabase.from('bank_accounts').update({ current_balance: Math.max(0, Number(ba.current_balance) - actualAmt) }).eq('id', bankAccountId)
-    }
 
     setMsg('✅'); await fetchAll()
     setModal({ open: false, purchase: null }); setAmount(''); setNotes(''); setBankAccountId('')
