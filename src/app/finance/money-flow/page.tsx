@@ -54,7 +54,7 @@ export default function MoneyFlowLedgerPage() {
     ;(ar.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AR Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(ap.data || []).forEach((x:any) => { if (x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('AP Payment ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
     ;(returns.data || []).forEach((x:any) => { if (x.refund_method !== 'credit' && x.bank_account_id && !bankMap.has(x.bank_account_id)) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a missing bank account mapping') })
-    ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank') issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank but has no account-level mapping in the current expense record') })
+    ;(expenses.data || []).forEach((x:any) => { if (x.paid_by === 'bank') issues.push('Expense ' + x.id.slice(0,8) + ' is marked Bank; account-level mapping is unavailable in the current expense record') })
     setOpeningBalances(Object.fromEntries((banks.data || []).map((b:any) => [b.account_name, Number(b.current_balance || 0)])))
     const rows: Entry[] = []
 
@@ -86,7 +86,7 @@ export default function MoneyFlowLedgerPage() {
       if (x.refund_method === 'credit') return
       const amount = Number(x.total_amount || 0)
       if (amount <= 0) issues.push('Sales Return ' + x.id.slice(0,8) + ' has a non-positive refund amount')
-      if (x.refund_method === 'cash' && !x.bank_account_id) issues.push('Sales Return ' + x.id.slice(0,8) + ' uses cash refund route without a bank account mapping; review cash handling')
+      if (x.refund_method === 'cash' && !x.bank_account_id) issues.push('Sales Return ' + x.id.slice(0,8) + ' uses cash refund route without an account mapping; review cash handling')
       rows.push({ id:'return-'+x.id, date:x.return_date, source:'Sales Return', direction:'out', amount:Number(x.total_amount || 0), account:x.bank_account_id ? (bankMap.get(x.bank_account_id) || 'Bank Account') : 'Cash', reference:x.id.slice(0,8), note:x.reason || 'Customer refund' })
     })
 
@@ -94,7 +94,7 @@ export default function MoneyFlowLedgerPage() {
     const seen = new Set<string>()
     rows.forEach(x => {
       const key = x.source + '|' + x.reference + '|' + x.amount + '|' + String(x.date).slice(0,10)
-      if (seen.has(key)) issues.push('Duplicate ledger row detected for ' + x.source + ' ' + x.reference)
+      if (seen.has(key)) issues.push('Potential duplicate ledger row for ' + x.source + ' ' + x.reference + ' — review matching date, amount and reference')
       seen.add(key)
     })
     setAuditIssues(Array.from(new Set(issues)))
@@ -105,7 +105,7 @@ export default function MoneyFlowLedgerPage() {
 
   useEffect(() => { load() }, [from, to])
 
-  const filtered = useMemo(() => entries.filter(x => (filter === 'all' || x.direction === filter) && (source === 'all' || x.source === source) && (!issueFilter || auditIssues.some(i => i.toLowerCase().includes(x.source.toLowerCase()) || i.includes(x.reference) || i.includes(x.id.slice(-8))))), [entries, filter, source, issueFilter, auditIssues])
+  const filtered = useMemo(() => entries.filter(x => (filter === 'all' || x.direction === filter) && (source === 'all' || x.source === source) && (!issueFilter || auditIssues.some(i => i.toLowerCase().includes(x.source.toLowerCase()) || i.includes(x.reference) || i.includes(x.id.slice(0,8))))), [entries, filter, source, issueFilter, auditIssues])
   const totalIn = filtered.filter(x=>x.direction==='in').reduce((s,x)=>s+x.amount,0)
   const totalOut = filtered.filter(x=>x.direction==='out').reduce((s,x)=>s+x.amount,0)
   const sources = Array.from(new Set(entries.map(x=>x.source)))
@@ -128,7 +128,7 @@ export default function MoneyFlowLedgerPage() {
       'Sales Return':'/sales-return',
     }
     const type = issue.includes('could not be loaded') ? 'DATA' : issue.includes('mapping') || issue.includes('selected') ? 'MAPPING' : issue.includes('Duplicate') ? 'DUPLICATE' : 'AMOUNT'
-    const severity = issue.includes('could not be loaded') || issue.includes('exceeds') || issue.includes('non-positive') ? 'HIGH' : 'REVIEW'
+    const severity = issue.includes('could not be loaded') || issue.includes('exceeds') || issue.includes('non-positive') ? 'HIGH' : issue.includes('Potential duplicate') ? 'REVIEW' : 'REVIEW'
     return { source, href: source ? href[source] : undefined, type, severity }
   }
 
