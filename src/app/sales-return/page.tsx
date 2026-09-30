@@ -56,6 +56,7 @@ export default function SalesReturnPage() {
         original_transaction_id: data.id,
         customer_id: data.customer_id||'',
         items: (data.items||[]).map((i:any) => ({
+          product_id: i.product_id,
           product_name: i.product?.name,
           unit: i.product?.unit,
           original_qty: i.quantity,
