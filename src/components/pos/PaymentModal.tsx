@@ -149,7 +149,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold">{t.payment_title}</h2>
           <button onClick={onClose} className="material-control w-10 h-10 rounded-xl flex items-center justify-center text-sm"
-            style={{backgroundColor: 'var(--color-bg, #f9fafb)', color: 'var(--color-text-sub, #6b7280)'}}>✕</button>
+            style={{ backgroundColor: 'var(--color-bg, #f9fafb)', color: 'var(--color-text-sub, #6b7280)' }}>✕</button>
         </div>
 
         {/* Total */}
@@ -207,10 +207,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
                 ) : bankAccounts.map(b => (
                   <button key={b.id} onClick={() => setSelectedBankId(b.id)}
                     className="w-full flex items-center gap-3 p-3 rounded-xl transition-all"
-                    style={{
-                      backgroundColor: selectedBankId === b.id ? '#f0fdf4' : 'var(--color-bg, #f9fafb)',
-                      border: `2px solid ${selectedBankId === b.id ? '#16a34a' : 'var(--color-border, #e5e7eb)'}`,
-                    }}>
+                    style={{ backgroundColor: selectedBankId === b.id ? '#f0fdf4' : 'var(--color-bg, #f9fafb)', border: selectedBankId === b.id ? '2px solid #16a34a' : '2px solid var(--color-border, #e5e7eb)' }}>
                     <span className="text-xl">{(b.account_type as any)?.icon || '🏦'}</span>
                     <div className="flex-1 text-left">
                       <p className="font-medium text-sm" style={{color: 'var(--color-text, #111827)'}}>{b.account_name}</p>
