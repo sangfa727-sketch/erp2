@@ -54,10 +54,6 @@ const RPC_REGISTRY = {
     required: ['p_company_id', 'p_supplier_id', 'p_amount'],
     optional: ['p_payment_date', 'p_method', 'p_reference', 'p_notes'],
   },
-  rpc_record_purchase: {
-    required: ['p_company_id', 'p_supplier_id', 'p_items', 'p_payment_type'],
-    optional: ['p_amount_paid', 'p_transport_fee', 'p_auto_receive', 'p_notes'],
-  },
   rpc_receive_purchase: {
     required: ['p_company_id', 'p_purchase_id'],
     optional: ['p_received_by'],
@@ -110,7 +106,6 @@ const CONTACT_GUARDS: Partial<
   Record<RpcName, { param: string; ctype: 'customer' | 'supplier' }>
 > = {
   rpc_record_sale: { param: 'p_customer_id', ctype: 'customer' },
-  rpc_record_purchase: { param: 'p_supplier_id', ctype: 'supplier' },
   rpc_record_ar_payment: { param: 'p_customer_id', ctype: 'customer' },
   rpc_record_ap_payment: { param: 'p_supplier_id', ctype: 'supplier' },
 }
@@ -309,11 +304,7 @@ export async function POST(req: NextRequest) {
     // so ChatBubble can populate localStorage before NAV to /pos/receipt.
     // Mirrors voice-pos /api/voice/commit-sale pattern (production-tested).
     let enrichedResult: any = data
-    // Sprint D6f (2026-07-31): reconcile trans_no/po_no with DB post-trigger value.
-    // BEFORE INSERT triggers (trg_seq_sales / trg_seq_purch -> fn_get_next_seq)
-    // overwrite RPC pre-INSERT INV-/PO-YYYYMMDD- format with TR-/PO-NNNNNN.
-    // Re-query so buildSuccessMessage, receipt, localStorage, and /pos/receipt
-    // navigation all use the authoritative DB value.
+    // Re-query sale transaction number after DB-side sequencing so UI uses the authoritative value.
     if (data && typeof data === 'object') {
       try {
         if (tool === 'rpc_record_sale' && (data as any).transaction_id) {
@@ -321,11 +312,6 @@ export async function POST(req: NextRequest) {
             .from('transactions').select('trans_no')
             .eq('id', (data as any).transaction_id).maybeSingle()
           if (row?.trans_no) { (data as any).trans_no = row.trans_no }
-        } else if (tool === 'rpc_record_purchase' && (data as any).purchase_id) {
-          const { data: row } = await supabase
-            .from('purchases').select('po_no')
-            .eq('id', (data as any).purchase_id).maybeSingle()
-          if (row?.po_no) { (data as any).po_no = row.po_no }
         }
       } catch (e) {
         console.error('[ai/execute D6f reconcile] failed:', e)
