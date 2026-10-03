@@ -188,6 +188,7 @@ export default function InventoryPage() {
           </>
         )}
       </div>
+      </main>
 
       {/* Modal */}
       {modal.type && modal.product && (
