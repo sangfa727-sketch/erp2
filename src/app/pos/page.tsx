@@ -51,7 +51,7 @@ export default function POSPage() {
   }
 
   const handleConfirmPayment = useCallback(async (paymentData: {
-    paymentType: string; amountReceived: number; payments?: { method: string; amount: number }[]
+    paymentType: string; amountReceived: number; payments?: { method: string; amount: number; bankAccountId?: string }[]
     customerId?: string; customerName?: string; bankAccountId?: string
   }) => {
     // PaymentModal ကနေ customer ရွေးထားရင် override လုပ်မယ်
