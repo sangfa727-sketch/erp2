@@ -196,7 +196,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
               ]}
             />
 
-            {/* Bank account selector */
+            {/* Bank account selector */}
             {useBankTransfer && (
               <div className="space-y-2">
                 {bankAccounts.length === 0 ? (
