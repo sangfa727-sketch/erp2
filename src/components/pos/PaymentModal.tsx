@@ -165,7 +165,7 @@ export default function PaymentModal({ totalAmount, customerId: initCustomerId, 
         {/* Mode tabs */}
         <div className="grid grid-cols-3 gap-1 mb-4 p-1 rounded-xl"
           style={{backgroundColor: 'var(--color-bg, #f3f4f6)'}}>
-          {([['cash','💵',t.payment_cash],['credit','📒',t.payment_credit],['split','🔀',t.payment_split]] as [PayMode,string,string][]).map(([m,icon,label]) => (
+          {([['cash','💵',t.payment_cash],['credit','📒',t.payment_credit],['split','🔀',t.payment_split]] as Array<[PayMode, string, string]>).map(([m,icon,label]) => (
             <button key={m} onClick={() => { setMode(m); setMsg(''); setUseBankTransfer(false) }}
               className="material-control min-h-[52px] py-2 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-0.5"
               style={{
