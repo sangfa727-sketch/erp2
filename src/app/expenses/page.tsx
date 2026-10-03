@@ -147,13 +147,13 @@ export default function ExpensesPage() {
       <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
         <header className="mb-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • EXPENSE</p><h1 className="mt-1 text-2xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဘာအတွက်? ဘယ်လောက်? ဘယ်ကပေး?</h1></div>
           <div className="flex gap-2 flex-wrap">
-            <input type="month" className="material-control min-h-[48px] px-3 rounded-xl text-sm" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }}
-              className="p-2 border rounded-lg text-sm" />
+            <input type="month" className="material-control min-h-[48px] px-3 rounded-xl text-sm p-2 border" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }} />
             <button onClick={openAdd} className="material-control min-h-[48px] px-4 rounded-xl text-sm font-semibold bg-blue-600 text-white">
               {t.exp_add_btn}
             </button>
           </div>
         </div>
+        </header>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -268,7 +268,7 @@ export default function ExpensesPage() {
             )}
           </table>
         </div>
-      </div></header>
+      </div>
 
       {modal.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
