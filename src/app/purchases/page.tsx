@@ -75,21 +75,14 @@ export default function PurchasesPage() {
   const handleReceive = (purchaseId:string)=>{
     showConfirm('ပစ္စည်း လက်ခံရရှိပြီးပြီလား? Stock ထဲသို့ ထည့်မည်။', async()=>{
       setSaving(true); setMsg('')
-      const { data: purchase, error: purchaseError } = await supabase.from('purchases').select('id,is_received').eq('id',purchaseId).single()
-      if(purchaseError || !purchase){ setMsg('Error: Purchase မတွေ့ပါ'); setSaving(false); return }
-      if(purchase.is_received){ setMsg('ℹ️ ပစ္စည်းလက်ခံပြီးသားဖြစ်ပါတယ်'); setSaving(false); return }
-      const { data: items, error: itemsError } = await supabase.from('purchase_items').select('product_id,qty').eq('purchase_id',purchaseId)
-      if(itemsError){ setMsg('Error: '+itemsError.message); setSaving(false); return }
-      for(const item of (items||[])){
-        const { data: prod, error: prodError } = await supabase.from('products').select('stock_qty').eq('id',item.product_id).single()
-        if(prodError || !prod){ setMsg('Error: Stock item မတွေ့ပါ'); setSaving(false); return }
-        const { error: stockError } = await supabase.from('products').update({stock_qty:Number(prod.stock_qty||0)+Number(item.qty||0)}).eq('id',item.product_id)
-        if(stockError){ setMsg('Error: '+stockError.message); setSaving(false); return }
-      }
-      const { error: receiveError } = await supabase.from('purchases').update({is_received:true}).eq('id',purchaseId).eq('is_received',false)
-      if(receiveError){ setMsg('Error: '+receiveError.message); setSaving(false); return }
+      const { data, error } = await supabase.rpc('rpc_receive_purchase', {
+        p_company_id: companyId,
+        p_purchase_id: purchaseId,
+      })
+      if(error){ setMsg('Error: '+error.message); setSaving(false); return }
+      if(data?.success === false){ setMsg('Error: Purchase လက်ခံမရပါ'); setSaving(false); return }
       await fetchAll()
-      setMsg('✅ '+t.btn_save+' — လက်ခံပြီးပါပြီ')
+      setMsg('✅ ပစ္စည်း လက်ခံပြီးပါပြီ')
       setSaving(false)
     })
   }
