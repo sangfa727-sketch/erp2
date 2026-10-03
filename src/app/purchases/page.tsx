@@ -75,6 +75,8 @@ export default function PurchasesPage() {
   const handleReceive = (purchaseId:string)=>{
     showConfirm('ပစ္စည်း လက်ခံရရှိပြီးပြီလား? Stock ထဲသို့ ထည့်မည်။', async()=>{
       setSaving(true); setMsg('')
+      const companyId = await getCompanyId()
+      if(!companyId){ setMsg(t.pur_err_company); setSaving(false); return }
       const { data, error } = await supabase.rpc('rpc_receive_purchase', {
         p_company_id: companyId,
         p_purchase_id: purchaseId,
