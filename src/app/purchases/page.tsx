@@ -90,6 +90,8 @@ export default function PurchasesPage() {
   }
 
   const handleDelete = (id:string)=>{
+    const purchase = purchases.find(p=>p.id===id)
+    if(purchase?.is_received){ setMsg('လက်ခံပြီးသား Purchase ကို ဖျက်မရပါ'); return }
     showConfirm('ဝယ်ယူမှု ဖျက်မှာ သေချာလား?', async()=>{
       await supabase.from('purchase_items').delete().eq('purchase_id',id)
       await supabase.from('purchases').delete().eq('id',id)
@@ -126,7 +128,7 @@ export default function PurchasesPage() {
         const {data:np2} = await supabase.from('products').insert({
           company_id:companyId, name:l.newName,
           base_cost:Number(l.unit_price||0), selling_price:Number(l.unit_price||0),
-          stock_qty:Number(l.qty||0), reorder_level:5, unit:l.unit||'ခု',
+          stock_qty:0, reorder_level:5, unit:l.unit||'ခု',
         }).select().single()
         if(np2) finalLines.push({...l,product_id:np2.id})
       } else {
@@ -176,7 +178,7 @@ export default function PurchasesPage() {
                     <div className="flex gap-2">
                       {!p.is_received && <button onClick={e=>{e.stopPropagation();handleReceive(p.id)}} className="px-3 py-1 bg-green-600 text-white rounded text-xs">လက်ခံ</button>}
                       {!p.is_received && <button onClick={e=>{e.stopPropagation();openEdit(p)}} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs">ပြင်</button>}
-                      <button onClick={e=>{e.stopPropagation();handleDelete(p.id)}} className="px-3 py-1 bg-red-500 text-white rounded text-xs">ဖျက်</button>
+                      {!p.is_received && <button onClick={e=>{e.stopPropagation();handleDelete(p.id)}} className="px-3 py-1 bg-red-500 text-white rounded text-xs">ဖျက်</button>}
                     </div>
                   </div>
                 </div>
@@ -231,8 +233,8 @@ export default function PurchasesPage() {
                     <td className="p-3 text-right font-bold text-red-500">K {bal.toLocaleString()}</td>
                     <td className="p-3 text-center">
                       <div className="flex gap-1 justify-center">
-                        <button onClick={()=>openEdit(p)} className="px-2 py-1 bg-yellow-500 text-white rounded text-xs">ပြင်</button>
-                        <button onClick={()=>handleDelete(p.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">ဖျက်</button>
+                        {!p.is_received && <button onClick={()=>openEdit(p)} className="px-2 py-1 bg-yellow-500 text-white rounded text-xs">ပြင်</button>}
+                        {!p.is_received && <button onClick={()=>handleDelete(p.id)} className="px-2 py-1 bg-red-500 text-white rounded text-xs">ဖျက်</button>}
                       </div>
                     </td>
                   </tr>
