@@ -72,6 +72,28 @@ export default function PurchasesPage() {
     setMsg('');setModal({mode:'edit',id:p.id})
   }
 
+  const handleReceive = (purchaseId:string)=>{
+    showConfirm('ပစ္စည်း လက်ခံရရှိပြီးပြီလား? Stock ထဲသို့ ထည့်မည်။', async()=>{
+      setSaving(true); setMsg('')
+      const { data: purchase, error: purchaseError } = await supabase.from('purchases').select('id,is_received').eq('id',purchaseId).single()
+      if(purchaseError || !purchase){ setMsg('Error: Purchase မတွေ့ပါ'); setSaving(false); return }
+      if(purchase.is_received){ setMsg('ℹ️ ပစ္စည်းလက်ခံပြီးသားဖြစ်ပါတယ်'); setSaving(false); return }
+      const { data: items, error: itemsError } = await supabase.from('purchase_items').select('product_id,qty').eq('purchase_id',purchaseId)
+      if(itemsError){ setMsg('Error: '+itemsError.message); setSaving(false); return }
+      for(const item of (items||[])){
+        const { data: prod, error: prodError } = await supabase.from('products').select('stock_qty').eq('id',item.product_id).single()
+        if(prodError || !prod){ setMsg('Error: Stock item မတွေ့ပါ'); setSaving(false); return }
+        const { error: stockError } = await supabase.from('products').update({stock_qty:Number(prod.stock_qty||0)+Number(item.qty||0)}).eq('id',item.product_id)
+        if(stockError){ setMsg('Error: '+stockError.message); setSaving(false); return }
+      }
+      const { error: receiveError } = await supabase.from('purchases').update({is_received:true}).eq('id',purchaseId).eq('is_received',false)
+      if(receiveError){ setMsg('Error: '+receiveError.message); setSaving(false); return }
+      await fetchAll()
+      setMsg('✅ '+t.btn_save+' — လက်ခံပြီးပါပြီ')
+      setSaving(false)
+    })
+  }
+
   const handleDelete = (id:string)=>{
     showConfirm('ဝယ်ယူမှု ဖျက်မှာ သေချာလား?', async()=>{
       await supabase.from('purchase_items').delete().eq('purchase_id',id)
@@ -92,7 +114,7 @@ export default function PurchasesPage() {
     if(modal.mode==='add'){
       const {data:np,error} = await supabase.from('purchases').insert({
         company_id:companyId, supplier_id:supplierId||null,
-        items_total:itemsTotal, amount_paid:paidAmt, is_received:true,
+        items_total:itemsTotal, amount_paid:paidAmt, is_received:false,
       }).select().single()
       if(error){setMsg('Error: '+error.message);setSaving(false);return}
       purchaseId = np.id
@@ -114,10 +136,6 @@ export default function PurchasesPage() {
         if(np2) finalLines.push({...l,product_id:np2.id})
       } else {
         finalLines.push(l)
-        if(modal.mode==='add'){
-          const prod = products.find(p=>p.id===l.product_id)
-          if(prod) await supabase.from('products').update({stock_qty:Number(prod.stock_qty||0)+Number(l.qty)}).eq('id',l.product_id)
-        }
       }
     }
 
@@ -126,10 +144,6 @@ export default function PurchasesPage() {
       qty:Number(l.qty), unit_price:Number(l.unit_price),
     })))
 
-    if(supplierId&&balance>0&&modal.mode==='add'){
-      const {data:fs} = await supabase.from('contacts').select('current_balance').eq('id',supplierId).single()
-      await supabase.from('contacts').update({current_balance:Number(fs?.current_balance||0)+balance}).eq('id',supplierId)
-    }
 
     setMsg('✅ ' + t.btn_save)
     await fetchAll()
@@ -163,9 +177,10 @@ export default function PurchasesPage() {
                     </div>
                   </div>
                   <div className="flex justify-between items-center mt-2">
-                    <span className="text-xs text-gray-400">{(p.items||[]).length} မျိုး {expanded?'▲':'▼'}</span>
+                    <span className="text-xs text-gray-400">{p.is_received ? '✅ လက်ခံပြီး' : '⏳ မလက်ခံရသေး'} · {(p.items||[]).length} မျိုး {expanded?'▲':'▼'}</span>
                     <div className="flex gap-2">
-                      <button onClick={e=>{e.stopPropagation();openEdit(p)}} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs">ပြင်</button>
+                      {!p.is_received && <button onClick={e=>{e.stopPropagation();handleReceive(p.id)}} className="px-3 py-1 bg-green-600 text-white rounded text-xs">လက်ခံ</button>}
+                      {!p.is_received && <button onClick={e=>{e.stopPropagation();openEdit(p)}} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs">ပြင်</button>}
                       <button onClick={e=>{e.stopPropagation();handleDelete(p.id)}} className="px-3 py-1 bg-red-500 text-white rounded text-xs">ဖျက်</button>
                     </div>
                   </div>
@@ -210,7 +225,7 @@ export default function PurchasesPage() {
                 return(
                   <tr key={p.id} className="border-b hover:bg-gray-50">
                     <td className="p-3 text-xs text-gray-500">{new Date(p.created_at).toLocaleDateString()}</td>
-                    <td className="p-3">{p.supplier?.contact_name||'-'}</td>
+                    <td className="p-3">{p.supplier?.contact_name||'-'}<div className="text-xs mt-1">{p.is_received ? '✅ လက်ခံပြီး' : '⏳ မလက်ခံရသေး'}</div></td>
                     <td className="p-3 text-xs text-gray-600">
                       {(p.items||[]).map((it:any,i:number)=>(
                         <div key={i}>{it.product?.name||'?'} × {it.qty} {it.product?.unit||'ခု'}</div>
