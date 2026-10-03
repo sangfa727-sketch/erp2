@@ -7,6 +7,7 @@ import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import { toEnglishNumber } from '@/lib/utils'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface CreditSale {
   id: string
@@ -71,59 +72,49 @@ export default function ARPage() {
   const handleBatchPay = async () => {
     if (!selectedSales.length) return
     setBatchSaving(true)
-    const cashAmt = batchPayMethod === 'cash' ? getSelectedTotal(selectedCustomerData)
+    const totalSelected = getSelectedTotal(selectedCustomerData)
+    const cashAmt = batchPayMethod === 'cash' ? totalSelected
       : batchPayMethod === 'bank' ? 0
-      : parseFloat(batchCash) || 0
-    const bankAmt = batchPayMethod === 'bank' ? getSelectedTotal(selectedCustomerData)
-      : batchPayMethod === 'split' ? getSelectedTotal(selectedCustomerData) - cashAmt : 0
+      : Math.min(parseFloat(batchCash) || 0, totalSelected)
+    const bankAmt = totalSelected - cashAmt
+    const perCash = cashAmt / selectedSales.length
+    const perBank = bankAmt / selectedSales.length
     const today = new Date().toISOString().split('T')[0]
+
     for (const saleId of selectedSales) {
       const sale = selectedCustomerData?.sales.find(s => s.id === saleId)
-      if (!sale) continue
-      const debt = Number(sale.total_amount) - Number(sale.amount_received)
-      if (debt <= 0) continue
-      // Insert payment record
-      if (cashAmt > 0) {
-        await supabase.from('ar_payments').insert({
-          contact_id: sale.customer_id, transaction_id: saleId,
-          amount: Math.min(cashAmt / selectedSales.length, debt),
-          payment_date: today, payment_method: 'cash', notes: 'Batch payment'
+      if (!sale || !sale.customer_id) continue
+      let remaining = Math.max(0, Number(sale.total_amount) - Number(sale.amount_received))
+      if (remaining <= 0) continue
+
+      const cashPay = Math.min(perCash, remaining)
+      if (cashPay > 0) {
+        const { error } = await supabase.rpc('rpc_record_ar_payment_v2', {
+          p_contact_id: sale.customer_id, p_amount: cashPay, p_payment_method: 'cash',
+          p_transaction_id: sale.id, p_bank_account_id: null, p_payment_date: today, p_notes: 'Batch payment'
         })
+        if (error) { setMsg('Error: ' + error.message); setBatchSaving(false); return }
+        remaining -= cashPay
       }
-      if (bankAmt > 0 && batchBankId) {
-        await supabase.from('ar_payments').insert({
-          contact_id: sale.customer_id, transaction_id: saleId,
-          amount: Math.min(bankAmt / selectedSales.length, debt),
-          payment_date: today, payment_method: 'bank',
-          bank_account_id: batchBankId, notes: 'Batch payment'
+
+      const bankPay = Math.min(perBank, remaining)
+      if (bankPay > 0) {
+        if (!batchBankId) { setMsg('Bank account ရွေးပါ'); setBatchSaving(false); return }
+        const { error } = await supabase.rpc('rpc_record_ar_payment_v2', {
+          p_contact_id: sale.customer_id, p_amount: bankPay, p_payment_method: 'bank',
+          p_transaction_id: sale.id, p_bank_account_id: batchBankId, p_payment_date: today, p_notes: 'Batch payment'
         })
-      }
-      // Update transaction amount_received
-      const payAmt = Math.min(cashAmt / selectedSales.length + bankAmt / selectedSales.length, debt)
-      await supabase.from('transactions').update({
-        amount_received: Number(sale.amount_received) + payAmt
-      }).eq('id', saleId)
-      // Update customer balance
-      if (sale.customer_id) {
-        const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id', sale.customer_id).single()
-        if (contact) await supabase.from('contacts').update({
-          current_balance: Math.max(0, Number(contact.current_balance) - payAmt)
-        }).eq('id', sale.customer_id)
+        if (error) { setMsg('Error: ' + error.message); setBatchSaving(false); return }
       }
     }
-    // Update bank balance
-    if (bankAmt > 0 && batchBankId) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id', batchBankId).single()
-      if (ba) await supabase.from('bank_accounts').update({
-        current_balance: Math.max(0, Number(ba.current_balance) - bankAmt)
-      }).eq('id', batchBankId)
-    }
+
     setSelectedSales([])
     setShowBatchModal(false)
     setBatchCash('')
     setBatchSaving(false)
     await fetchAll()
   }
+
   const [payMethod, setPayMethod] = useState('cash')
   const [bankAccountId, setBankAccountId] = useState('')
   const [notes, setNotes] = useState('')
@@ -186,39 +177,21 @@ export default function ARPage() {
     if (!receiveModal.txn) return
     if (!amount || Number(amount) <= 0) { setMsg(t.ar_err_amount); return }
     setSaving(true); setMsg('')
-    const cid = await getCompanyId()
+
     const payAmt = Number(amount)
     const maxAmt = Number(receiveModal.txn.total_amount) - Number(receiveModal.txn.amount_received)
     const actualAmt = Math.min(payAmt, maxAmt)
 
-    const { error } = await supabase.from('ar_payments').insert({
-      company_id: cid,
-      contact_id: receiveModal.txn.customer_id,
-      transaction_id: receiveModal.txn.id,
-      payment_date: payDate,
-      amount: actualAmt,
-      payment_method: payMethod,
-      bank_account_id: payMethod !== 'cash' ? bankAccountId || null : null,
-      notes: notes || null,
+    const { error } = await supabase.rpc('rpc_record_ar_payment_v2', {
+      p_contact_id: receiveModal.txn.customer_id,
+      p_amount: actualAmt,
+      p_payment_method: payMethod,
+      p_transaction_id: receiveModal.txn.id,
+      p_bank_account_id: payMethod === 'bank' ? (bankAccountId || null) : null,
+      p_payment_date: payDate,
+      p_notes: notes || null,
     })
     if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
-
-    // Update transaction amount_received
-    await supabase.from('transactions').update({
-      amount_received: Number(receiveModal.txn.amount_received) + actualAmt
-    }).eq('id', receiveModal.txn.id)
-
-    // Update customer balance
-    if (receiveModal.txn.customer_id) {
-      const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id', receiveModal.txn.customer_id).single()
-      if (contact) await supabase.from('contacts').update({ current_balance: Math.max(0, Number(contact.current_balance) - actualAmt) }).eq('id', receiveModal.txn.customer_id)
-    }
-
-    // Update bank balance
-    if (payMethod !== 'cash' && bankAccountId) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id', bankAccountId).single()
-      if (ba) await supabase.from('bank_accounts').update({ current_balance: Number(ba.current_balance) + actualAmt }).eq('id', bankAccountId)
-    }
 
     setMsg('✅'); await fetchAll()
     setReceiveModal({ open: false, txn: null }); setAmount(''); setNotes(''); setBankAccountId('')
@@ -260,8 +233,8 @@ export default function ARPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">📨 {t.ar}</h1>
           <div className="flex gap-2">
             {filterCustomer && (
@@ -278,7 +251,7 @@ export default function ARPage() {
         </div>
 
         {/* Total AR */}
-        <div className="rounded-2xl p-5 mb-6" style={{
+        <div className="material-control rounded-xl p-4 mb-4" style={{
           background:'linear-gradient(135deg,#fff7ed,#ffedd5)',
           border:'1px solid #fed7aa',
           boxShadow:'0 4px 20px rgba(249,115,22,0.1), 0 1px 4px rgba(0,0,0,0.05)'
@@ -298,7 +271,7 @@ export default function ARPage() {
 
         {!filterCustomer ? (
           /* Customer List */
-          <div className="rounded-2xl overflow-hidden mb-6" style={{
+          <div className="material-control rounded-xl overflow-hidden mb-6" style={{
           background:'var(--color-card)',
           border:'1px solid var(--color-border)',
           boxShadow:'0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)'
@@ -364,7 +337,7 @@ export default function ARPage() {
         ) : (
           /* Customer Detail */
           <div>
-            <div className="rounded-2xl overflow-hidden mb-6" style={{
+            <div className="material-control rounded-xl overflow-hidden mb-6" style={{
               background:'var(--color-card)',
               border:'1px solid var(--color-border)',
               boxShadow:'0 4px 20px rgba(0,0,0,0.06)'
@@ -438,7 +411,7 @@ export default function ARPage() {
             </div>
 
             {/* Payment History */}
-            <div className="rounded-2xl overflow-hidden" style={{
+            <div className="material-control rounded-xl overflow-hidden" style={{
               background:'var(--color-card)',
               border:'1px solid var(--color-border)',
               boxShadow:'0 4px 20px rgba(0,0,0,0.06)'
@@ -477,7 +450,7 @@ export default function ARPage() {
       {/* Receive Payment Modal */}
       {receiveModal.open && receiveModal.txn && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-2">{t.ar_modal_title}</h2>
             <div className="bg-orange-50 rounded-lg p-3 mb-4 text-sm">
               <p className="font-medium text-gray-800">👤 {(receiveModal.txn.customer as any)?.contact_name}</p>
@@ -495,19 +468,21 @@ export default function ARPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
-                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_payment_method}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setPayMethod('cash')} className={`py-2 rounded-lg text-sm border ${payMethod==='cash'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ar_cash}</button>
-                  <button onClick={() => setPayMethod('bank')} className={`py-2 rounded-lg text-sm border ${payMethod==='bank'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ar_bank}</button>
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={payMethod}
+                onChange={setPayMethod}
+                title={t.ar_payment_method}
+                options={[
+                  { value:'cash', icon:'💵', label:t.ar_cash, description:'Receive directly as cash.' },
+                  { value:'bank', icon:'🏦', label:t.ar_bank, description:'Receive into a bank account.' },
+                ]}
+              />
               {payMethod==='bank' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_bank_account}</label>
-                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
+                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
                     <option value="">{t.ar_select}</option>
                     {bankAccounts.map(b => <option key={b.id} value={b.id}>{(b.account_type as any)?.icon} {b.account_name}</option>)}
                   </select>
@@ -517,11 +492,11 @@ export default function ARPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_amount}</label>
                 <input type="text" inputMode="numeric" value={amount}
                   onChange={e => { const v=toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setAmount(v) }}
-                  className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_notes}</label>
-                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
             </div>
             {msg && <p className={'text-sm mt-3 '+(msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}
@@ -538,13 +513,13 @@ export default function ARPage() {
       {/* Add Manual AR Modal */}
       {addModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">{t.ar_add_debt_title}</h2>
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">Customer</label>
                 <select value={manualAR.customerId} onChange={e => setManualAR(m => ({...m, customerId: e.target.value}))}
-                  className="w-full p-2 border rounded-lg text-sm">
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
                   <option value="">{t.ar_select}</option>
                   {allCustomers.map(c => <option key={c.id} value={c.id}>{c.contact_name}</option>)}
                 </select>
@@ -552,18 +527,18 @@ export default function ARPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
                 <input type="date" value={manualAR.date} onChange={e => setManualAR(m => ({...m, date: e.target.value}))}
-                  className="w-full p-2 border rounded-lg text-sm" />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_description}</label>
                 <input type="text" value={manualAR.description} onChange={e => setManualAR(m => ({...m, description: e.target.value}))}
-                  className="w-full p-2 border rounded-lg text-sm" placeholder={t.ar_description_ph} />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder={t.ar_description_ph} />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ar_amount}</label>
                 <input type="text" inputMode="numeric" value={manualAR.amount}
                   onChange={e => { const v=toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setManualAR(m => ({...m, amount: v})) }}
-                  className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder="0" />
               </div>
             </div>
             {msg && <p className={'text-sm mt-3 '+(msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}
@@ -660,7 +635,7 @@ export default function ARPage() {
             )}
             <div className="flex gap-2 mt-4">
               <button onClick={() => setShowBatchModal(false)}
-                className="flex-1 py-2 border rounded-xl text-sm">ပယ်ဖျက်</button>
+                className="material-control flex-1 min-h-[52px] rounded-xl text-sm">ပယ်ဖျက်</button>
               <button onClick={handleBatchPay} disabled={batchSaving}
                 className="flex-1 py-2 bg-green-500 text-white rounded-xl text-sm font-medium disabled:opacity-50">
                 {batchSaving ? 'ချေနေသည်...' : '✅ ချေမည်'}

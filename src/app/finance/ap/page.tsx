@@ -6,6 +6,7 @@ import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import { toEnglishNumber } from '@/lib/utils'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface CreditPurchase {
   id: string
@@ -92,43 +93,20 @@ export default function APPage() {
     if (!amount || Number(amount) <= 0) { setMsg(t.ap_err_amount); return }
     setSaving(true); setMsg('')
 
-    const companyId = await getCompanyId()
     const payAmt = Number(amount)
     const maxAmt = Number(modal.purchase.items_total) - Number(modal.purchase.amount_paid)
     const actualAmt = Math.min(payAmt, maxAmt)
 
-    // Insert AP payment
-    const { error } = await supabase.from('ap_payments').insert({
-      company_id: companyId,
-      contact_id: modal.purchase.supplier_id,
-      purchase_id: modal.purchase.id,
-      payment_date: payDate,
-      amount: actualAmt,
-      payment_method: payMethod,
-      bank_account_id: payMethod !== 'cash' ? bankAccountId || null : null,
-      notes: notes || null,
+    const { error } = await supabase.rpc('rpc_record_ap_payment_v2', {
+      p_contact_id: modal.purchase.supplier_id,
+      p_amount: actualAmt,
+      p_payment_method: payMethod,
+      p_purchase_id: modal.purchase.id,
+      p_bank_account_id: payMethod === 'bank' ? (bankAccountId || null) : null,
+      p_payment_date: payDate,
+      p_notes: notes || null,
     })
     if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
-
-    // Update purchase amount_paid
-    const newPaid = Number(modal.purchase.amount_paid) + actualAmt
-    await supabase.from('purchases').update({ amount_paid: newPaid }).eq('id', modal.purchase.id)
-
-    // Update supplier balance
-    if (modal.purchase.supplier_id) {
-      const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id', modal.purchase.supplier_id).single()
-      if (contact) {
-        await supabase.from('contacts').update({
-          current_balance: Math.max(0, Number(contact.current_balance) - actualAmt)
-        }).eq('id', modal.purchase.supplier_id)
-      }
-    }
-
-    // Update bank account balance
-    if (payMethod !== 'cash' && bankAccountId) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id', bankAccountId).single()
-      if (ba) await supabase.from('bank_accounts').update({ current_balance: Math.max(0, Number(ba.current_balance) - actualAmt) }).eq('id', bankAccountId)
-    }
 
     setMsg('✅'); await fetchAll()
     setModal({ open: false, purchase: null }); setAmount(''); setNotes(''); setBankAccountId('')
@@ -137,8 +115,8 @@ export default function APPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl md:text-2xl font-bold text-gray-800">📤 {t.ap}</h1>
           {filterSupplier && (
             <button onClick={() => setFilterSupplier('')} className="text-sm text-blue-600 hover:underline px-3 py-1 bg-blue-50 rounded-full border border-blue-200">
@@ -148,7 +126,7 @@ export default function APPage() {
         </div>
 
         {/* Total AP */}
-        <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
+        <div className="material-control rounded-xl p-4 mb-4">
           <div className="text-sm text-red-600 mb-1">📤 {t.ap_total}</div>
           <div className="text-3xl font-bold text-red-700">K {totalAP.toLocaleString()}</div>
           <div className="text-xs text-red-500 mt-1">{supplierList.length} Supplier</div>
@@ -156,7 +134,7 @@ export default function APPage() {
 
         {!filterSupplier ? (
           /* Supplier List View */
-          <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+          <div className="material-control rounded-xl overflow-hidden mb-6">
             <div className="p-4 border-b bg-gray-50">
               <h2 className="font-bold text-gray-700">{t.ap_supplier_list}</h2>
             </div>
@@ -208,7 +186,7 @@ export default function APPage() {
         ) : (
           /* Selected Supplier Detail View */
           <div>
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-6">
+            <div className="material-control rounded-xl overflow-hidden mb-6">
               <div className="p-4 border-b bg-red-50 flex justify-between items-center">
                 <div>
                   <h2 className="font-bold text-gray-800 text-lg">🏪 {selectedSupplierData?.name}</h2>
@@ -267,7 +245,7 @@ export default function APPage() {
             </div>
 
             {/* Payment History */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div className="material-control rounded-xl overflow-hidden">
               <div className="p-4 border-b bg-gray-50">
                 <h2 className="font-bold text-gray-700">{t.ap_history}</h2>
               </div>
@@ -304,7 +282,7 @@ export default function APPage() {
       {/* Pay Modal */}
       {modal.open && modal.purchase && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-2">{t.ap_modal_title}</h2>
             <div className="bg-red-50 rounded-lg p-3 mb-4 text-sm">
               <p className="font-medium text-gray-800">🏪 {(modal.purchase.supplier as any)?.contact_name}</p>
@@ -322,19 +300,33 @@ export default function APPage() {
             <div className="space-y-3">
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.col_date}</label>
-                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="date" value={payDate} onChange={e => setPayDate(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_payment_method}</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button onClick={() => setPayMethod('cash')} className={`py-2 rounded-lg text-sm border ${payMethod==='cash'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ap_cash}</button>
-                  <button onClick={() => setPayMethod('bank')} className={`py-2 rounded-lg text-sm border ${payMethod==='bank'?'bg-blue-600 text-white':'hover:bg-gray-50'}`}>{t.ap_bank}</button>
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={payMethod}
+                onChange={setPayMethod}
+                title={t.ap_payment_method}
+                options={[
+                  { value:'cash', icon:'💵', label:t.ap_cash, description:'Pay directly as cash.' },
+                  { value:'bank', icon:'🏦', label:t.ap_bank, description:'Pay from a bank account.' },
+                ]}
+              />
+              <MoneyFlowImpact
+                direction="out"
+                amount={Number(amount || 0)}
+                routeLabel={payMethod === 'cash' ? t.ap_cash : t.ap_bank}
+                accountLabel={payMethod === 'bank'
+                  ? (bankAccounts.find(b => b.id === bankAccountId)?.account_name || t.ap_bank_account)
+                  : undefined}
+                helper={payMethod === 'bank'
+                  ? 'This payment reduces the selected account balance.'
+                  : 'This payment is recorded as cash paid out.'}
+              />
+
               {payMethod === 'bank' && (
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_bank_account}</label>
-                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="w-full p-2 border rounded-lg text-sm">
+                  <select value={bankAccountId} onChange={e => setBankAccountId(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
                     <option value="">{t.ap_select}</option>
                     {bankAccounts.map(b => <option key={b.id} value={b.id}>{(b.account_type as any)?.icon} {b.account_name}</option>)}
                   </select>
@@ -344,11 +336,11 @@ export default function APPage() {
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_amount}</label>
                 <input type="text" inputMode="numeric" value={amount}
                   onChange={e => { const v = toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setAmount(v) }}
-                  className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
+                  className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" placeholder="0" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.ap_notes}</label>
-                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="w-full p-2 border rounded-lg text-sm" />
+                <input type="text" value={notes} onChange={e => setNotes(e.target.value)} className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
               </div>
             </div>
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}

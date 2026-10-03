@@ -42,6 +42,7 @@ const ERP_MENU_GROUPS = [
     groupKey: 'finance',
     items: [
       { href: '/finance/bank-accounts', icon: '🏦', key: 'bank_accounts' },
+      { href: '/finance/money-flow',    icon: '💰', key: 'money_flow' },
       { href: '/finance/ar',            icon: '📨', key: 'ar' },
       { href: '/finance/ap',            icon: '📤', key: 'ap' },
       { href: '/expenses',              icon: '💸', key: 'expenses' },
@@ -253,14 +254,14 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
 
   return (
     <div
-      className={`${collapsed && !isSupportMode ? 'w-16' : 'w-56'} h-screen flex flex-col transition-all duration-300`}
+      className={`${collapsed && !isSupportMode ? 'w-16' : 'w-56'} erp-sidebar h-screen flex flex-col transition-all duration-300`}
       style={{
         backgroundColor: isSupportMode ? '#4C1D95' : 'var(--color-sidebar, #111827)',
       }}
     >
       {/* ── Header ── */}
       <div
-        className="flex items-center justify-between px-3 pt-4 pb-3 flex-shrink-0"
+        className="flex items-center justify-between px-3 pt-4 pb-3 flex-shrink-0 sidebar-header"
         style={{ borderBottom: `1px solid ${isSupportMode ? 'rgba(255,255,255,0.15)' : 'var(--sidebar-border, #1f2937)'}` }}
       >
         {isSupportMode ? (
@@ -284,7 +285,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-base flex-shrink-0"
                     style={{ backgroundColor: 'var(--sidebar-hover-bg, #374151)' }}>🏢</div>
                 )}
-                <span className="font-bold text-sm truncate" style={{ color: 'var(--sidebar-title, #FFFFFF)' }}>
+                <span className="font-bold text-sm truncate sidebar-title" style={{ color: 'var(--sidebar-title, #FFFFFF)' }}>
                   {companyName}
                 </span>
               </div>
@@ -303,7 +304,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         {/* Mobile close button */}
         {onClose && (
           <button onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-2 md:hidden transition-colors"
+            className="material-control w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ml-2 md:hidden transition-colors"
             style={{
               color: isSupportMode ? 'rgba(255,255,255,0.8)' : 'var(--sidebar-icon, #9CA3AF)',
               backgroundColor: isSupportMode ? 'rgba(255,255,255,0.1)' : 'var(--sidebar-hover-bg, #1f2937)',
@@ -315,7 +316,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
         {/* Desktop collapse toggle (ERP only) */}
         {!isSupportMode && (
           <button onClick={() => setCollapsed(!collapsed)}
-            className="w-6 h-6 rounded-md items-center justify-center flex-shrink-0 ml-1 hidden md:flex transition-colors"
+            className="material-control w-6 h-6 rounded-md items-center justify-center flex-shrink-0 ml-1 hidden md:flex transition-colors"
             style={{ color: 'var(--sidebar-icon, #6B7280)' }}>
             <span className="text-xs">{collapsed ? '▶' : '◀'}</span>
           </button>
@@ -360,7 +361,7 @@ export default function Sidebar({ onClose }: { onClose?: () => void }) {
                     href={item.href}
                     title={collapsed && !isSupportMode ? label : undefined}
                     onClick={onClose}
-                    className="flex items-center rounded-xl mb-1 transition-all duration-150 active:scale-[0.98]"
+                    className="sidebar-item material-control flex items-center rounded-xl mb-1 transition-all duration-150 active:scale-[0.98]"
                     style={{
                       padding:         collapsed && !isSupportMode ? '10px' : '10px 12px',
                       justifyContent:  collapsed && !isSupportMode ? 'center' : 'flex-start',

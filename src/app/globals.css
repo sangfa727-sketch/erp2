@@ -16,18 +16,30 @@
   --color-input-text: #111827;
   --color-input-border: #d1d5db;
   --color-sidebar: #111827;
+  --surface-1: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #f1f5f9;
+  --text-strong: #0f172a;
+  --text-muted: #64748b;
+  --focus-ring: rgba(37,99,235,.22);
 }
 
 [data-theme="dark"] {
-  --color-bg: #0f172a;
-  --color-card: #1e293b;
-  --color-text: #f1f5f9;
+  --color-bg: #0b1120;
+  --color-card: #111827;
+  --color-text: #f8fafc;
   --color-text-muted: #94a3b8;
-  --color-border: #334155;
-  --color-input-bg: #1e293b;
-  --color-input-text: #f1f5f9;
-  --color-input-border: #475569;
-  --color-sidebar: #020617;
+  --color-border: #263449;
+  --color-input-bg: #0f172a;
+  --color-input-text: #f8fafc;
+  --color-input-border: #334155;
+  --color-sidebar: #070d19;
+  --surface-1: #111827;
+  --surface-2: #0f172a;
+  --surface-3: #172033;
+  --text-strong: #f8fafc;
+  --text-muted: #94a3b8;
+  --focus-ring: rgba(96,165,250,.28);
 }
 
 [data-theme="classic"] {
@@ -39,7 +51,13 @@
   --color-input-bg: #fefcf8;
   --color-input-text: #2c1a0e;
   --color-input-border: #c4a882;
-  --color-sidebar: #3d2b1f;
+  --color-sidebar: #33241b;
+  --surface-1: #fefcf8;
+  --surface-2: #f5f0e8;
+  --surface-3: #ede8de;
+  --text-strong: #2c1a0e;
+  --text-muted: #7c6452;
+  --focus-ring: rgba(139,69,19,.22);
 }
 
 /* ── Base ── */
@@ -288,3 +306,186 @@ body.auth-page [data-theme="dark"] textarea {
   color: #0f172a !important;
   border-color: #e2e8f0 !important;
 }
+
+
+/* ── Premium ERP UI foundation ─────────────────────────────────────────────
+   Semantic surfaces keep the shell, sidebar, cards and controls readable
+   across themes. Avoid broad color overrides that can accidentally recolor
+   navigation or third-party widgets.
+*/
+:root {
+  color-scheme: light;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Sidebar contract: one stable surface + explicit semantic states. */
+.erp-sidebar {
+  background: var(--color-sidebar);
+  color: var(--sidebar-text);
+  border-color: var(--sidebar-border);
+}
+.erp-sidebar .sidebar-title {
+  color: var(--sidebar-title);
+}
+.erp-sidebar .sidebar-group {
+  color: var(--sidebar-group-text);
+}
+.erp-sidebar .sidebar-icon {
+  color: var(--sidebar-icon);
+}
+.erp-sidebar .sidebar-item {
+  color: var(--sidebar-text);
+  border: 1px solid transparent;
+}
+.erp-sidebar .sidebar-item:hover {
+  background: var(--sidebar-hover-bg);
+  color: var(--sidebar-hover-text);
+}
+.erp-sidebar .sidebar-item[aria-current="page"],
+.erp-sidebar .sidebar-item.is-active {
+  background: var(--sidebar-active-bg);
+  color: var(--sidebar-active-text);
+  box-shadow: 0 6px 18px rgba(0,0,0,.16);
+}
+[data-theme="dark"] .erp-sidebar .sidebar-item[aria-current="page"],
+[data-theme="dark"] .erp-sidebar .sidebar-item.is-active {
+  box-shadow: 0 6px 18px rgba(0,0,0,.32);
+}
+
+/* Premium focus treatment without changing component geometry. */
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+
+/* Softer page hierarchy and selection feedback. */
+::selection {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* Keep motion subtle and accessible. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* ── Modern Material / Fluent-like control contract ─────────────────────────
+   Interaction is predictable: clear hover, visible focus, restrained elevation,
+   and a short press feedback. Navigation remains information-dense.
+*/
+.erp-topbar {
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow: 0 1px 0 rgba(15,23,42,.04);
+}
+[data-theme="dark"] .erp-topbar {
+  box-shadow: 0 1px 0 rgba(255,255,255,.04);
+}
+.material-control {
+  position: relative;
+  isolation: isolate;
+  -webkit-tap-highlight-color: transparent;
+}
+.material-control::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(.96);
+  transition: opacity .12s ease, transform .12s ease;
+}
+.material-control:hover::after { opacity: .035; transform: scale(1); }
+.material-control:active::after { opacity: .08; transform: scale(.98); }
+.material-control:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.mode-switcher {
+  background: var(--surface-3);
+  border: 1px solid var(--color-border);
+  box-shadow: 0 1px 2px rgba(15,23,42,.06);
+}
+[data-theme="dark"] .mode-switcher {
+  box-shadow: 0 1px 2px rgba(0,0,0,.25);
+}
+.mode-switcher a {
+  color: var(--text-muted);
+}
+.mode-switcher a:hover {
+  color: var(--text-strong);
+}
+.mode-switcher a.bg-blue-600,
+.mode-switcher a.bg-purple-600 {
+  box-shadow: 0 1px 2px rgba(15,23,42,.14);
+}
+@media (prefers-reduced-motion: reduce) {
+  .material-control::after { transition: none; }
+}
+
+
+/* ── ERP2 Mobile-first usability layer ──────────────────────────────────────
+   Dense where it helps scanning; generous only for primary actions.
+*/
+.pos-mobile-shell {
+  background: var(--color-bg);
+}
+.pos-mobile-bar {
+  background: var(--color-card);
+  color: var(--text-strong);
+  box-shadow: 0 1px 0 rgba(15,23,42,.05);
+}
+[data-theme="dark"] .pos-mobile-bar {
+  box-shadow: 0 1px 0 rgba(255,255,255,.05);
+}
+@media (max-width: 767px) {
+  body {
+    -webkit-text-size-adjust: 100%;
+  }
+  .erp-sidebar {
+    box-shadow: 12px 0 32px rgba(0,0,0,.22);
+  }
+  .pos-mobile-shell .product-card,
+  .pos-mobile-shell button[class*="rounded-xl"] {
+    min-height: 48px;
+  }
+}
+
+
+/* ERP2 task-first POS */
+.pos-task-bar{background:var(--surface-1);border:1px solid var(--color-border);box-shadow:0 1px 3px rgba(15,23,42,.06)}
+.pos-search{min-height:48px;background:var(--surface-2);color:var(--text-strong);border:1px solid var(--color-border);border-radius:.875rem;transition:border-color .15s,box-shadow .15s,background-color .15s}
+.pos-search:focus{background:var(--surface-1);border-color:var(--color-primary)}
+.pos-scan{min-width:48px;min-height:48px;border-radius:.875rem}
+.pos-product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.pos-product-card{min-height:104px;padding:.75rem;border-radius:.875rem;background:var(--surface-1);border:1px solid var(--color-border);color:var(--text-strong);box-shadow:0 1px 3px rgba(15,23,42,.05);transition:transform .12s,border-color .12s,box-shadow .12s}
+.pos-product-card:hover{border-color:var(--color-primary);box-shadow:0 5px 16px rgba(15,23,42,.1);transform:translateY(-1px)}
+.pos-product-card:active{transform:scale(.985)}
+.pos-product-card:disabled{opacity:.48}.pos-stock{color:var(--text-muted)}.pos-stock-low{color:#d97706}.pos-stock-out{color:#dc2626}
+@media(min-width:640px){.pos-product-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(min-width:1024px){.pos-product-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:767px){.pos-task-bar{border-left:0;border-right:0;border-radius:0}.pos-product-card{min-height:96px}}
+[data-theme=dark] .pos-task-bar,[data-theme=dark] .pos-product-card{box-shadow:0 1px 3px rgba(0,0,0,.28)}
+
+
+@media(max-width:767px){.erp-pos-cart .cart-item{border-radius:.875rem}.erp-pos-cart{padding-bottom:env(safe-area-inset-bottom)}}
+
+
+/* ERP2 payment task surface */
+.payment-task{background:var(--surface-1);color:var(--text-strong)}
+@media(max-width:639px){.payment-task input{font-size:1.5rem}}

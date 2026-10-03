@@ -76,17 +76,17 @@ export default function SuppliersPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl md:text-2xl font-bold" style={{color:'var(--color-text)'}}>🏪 {t.page_suppliers}</h1>
           <button onClick={() => setModal({...EMPTY})} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+            className="material-control min-h-[48px] px-4 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 transition-colors">
             {t.btn_add}
           </button>
         </div>
 
         {/* Total Summary Card - Floating Style (Green for Suppliers) */}
-        <div className="rounded-2xl p-5 mb-6" style={{
+        <div className="material-control rounded-xl p-4 mb-4" style={{
           background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
           border: '1px solid #bbf7d0',
           boxShadow: '0 4px 20px rgba(34,197,94,0.1), 0 1px 4px rgba(0,0,0,0.05)'
@@ -111,7 +111,7 @@ export default function SuppliersPage() {
         <div className="mb-4">
           <input type="text" placeholder={(t as any).search_placeholder || t.search_placeholder} value={search}
             onChange={e => setSearch(e.target.value)} 
-            className="w-full p-2.5 rounded-xl text-sm transition-all"
+            className="pos-search min-h-[48px] w-full p-2.5 rounded-xl text-sm transition-all"
             style={{
               background: 'var(--color-card)',
               border: '1px solid var(--color-border)',
@@ -139,7 +139,7 @@ export default function SuppliersPage() {
             </div>
           ) : filtered.map(c => (
             <div key={c.id} 
-              className="rounded-2xl p-4 transition-all active:scale-[0.99]"
+              className="material-control rounded-xl p-4 transition-all active:scale-[0.99]"
               style={{
                 background: 'var(--color-card)',
                 border: '1px solid var(--color-border)',
@@ -161,11 +161,11 @@ export default function SuppliersPage() {
               </div>
               <div className="flex gap-2">
                 <button onClick={() => setModal({...c})} 
-                  className="flex-1 py-2 bg-yellow-500 text-white rounded-xl text-xs font-medium hover:bg-yellow-600 transition-colors">
+                  className="material-control flex-1 min-h-[48px] bg-yellow-500 text-white rounded-xl text-xs font-medium hover:bg-yellow-600 transition-colors">
                   {t.btn_edit}
                 </button>
                 <button onClick={() => handleDelete(c.id)} 
-                  className="flex-1 py-2 bg-red-500 text-white rounded-xl text-xs font-medium hover:bg-red-600 transition-colors">
+                  className="material-control flex-1 min-h-[48px] bg-red-500 text-white rounded-xl text-xs font-medium hover:bg-red-600 transition-colors">
                   {t.btn_delete}
                 </button>
               </div>
@@ -174,7 +174,7 @@ export default function SuppliersPage() {
         </div>
 
         {/* Desktop Table - Floating Style */}
-        <div className="hidden md:block rounded-2xl overflow-hidden" style={{
+        <div className="material-control hidden md:block rounded-xl overflow-hidden" style={{
           background: 'var(--color-card)',
           border: '1px solid var(--color-border)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)'
@@ -234,7 +234,7 @@ export default function SuppliersPage() {
       {/* Modal - Enhanced Style */}
       {modal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-5"
+          <div className="payment-task w-full md:max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-5"
             style={{
               background: 'var(--color-card)',
               boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)'
@@ -277,12 +277,12 @@ export default function SuppliersPage() {
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
               <button onClick={() => { setModal(null); setMsg('') }} 
-                className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                className="material-control flex-1 min-h-[52px] rounded-xl text-sm font-medium transition-colors"
                 style={{border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
                 {t.btn_cancel}
               </button>
               <button onClick={handleSave} disabled={saving} 
-                className="flex-1 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors">
+                className="material-control flex-1 min-h-[52px] bg-blue-600 text-white rounded-xl text-sm font-medium disabled:opacity-50 hover:bg-blue-700 transition-colors">
                 {saving ? 'သိမ်းနေသည်...' : '✅ ' + t.btn_save}
               </button>
             </div>
