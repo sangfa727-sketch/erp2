@@ -111,8 +111,8 @@ async function geminiTranscribe(
       responseMimeType: 'application/json',
       responseSchema: GEMINI_SCHEMA,
       temperature: 0.1,
-      thinkingConfig: { thinkingBudget: 512 },
-      maxOutputTokens: 1024,
+      // Transcription is a latency-sensitive path; reasoning adds no value here.\n      thinkingConfig: { thinkingBudget: 0 },
+      maxOutputTokens: 256,
     },
   }
 

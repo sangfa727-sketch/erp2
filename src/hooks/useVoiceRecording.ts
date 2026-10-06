@@ -21,9 +21,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 // Constants (from ChatBubble.tsx lines 60-70, kept in lockstep)
 const SILENCE_THRESHOLD = 18;
-const SILENCE_DURATION_MS = 2500;
-const MIN_RECORDING_MS = 700;
-const MAX_RECORDING_MS = 30000;
+const SILENCE_DURATION_MS = 700;
+const MIN_RECORDING_MS = 450;
+const MAX_RECORDING_MS = 20000;
 const SPEECH_ONSET_THRESHOLD = 28;
 const SPEECH_ONSET_WINDOW_MS = 3000;
 const NOISE_FLOOR_FRAMES = 8;

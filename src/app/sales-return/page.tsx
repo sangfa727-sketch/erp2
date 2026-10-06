@@ -5,6 +5,7 @@ import { getCompanyId } from '@/lib/getCompanyId'
 import { getDb } from '@/lib/db'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 export default function SalesReturnPage() {
   const supabase = createClient() // TODO: use getDb for RLS // TODO: use getDb for RLS // TODO: use getDb for RLS // TODO: use getDb for RLS
@@ -55,6 +56,7 @@ export default function SalesReturnPage() {
         original_transaction_id: data.id,
         customer_id: data.customer_id||'',
         items: (data.items||[]).map((i:any) => ({
+          product_id: i.product_id,
           product_name: i.product?.name,
           unit: i.product?.unit,
           original_qty: i.quantity,
@@ -75,36 +77,24 @@ export default function SalesReturnPage() {
     items.reduce((s:number,i:any) => s+(Number(i.return_qty)*Number(i.unit_price)),0)
 
   const save = async () => {
-    if (!modal.customer_id||modal.items.length===0) {
-      setMsg('❌ '+tAny.sr_customer_required); return
+    if (!modal.customer_id || modal.items.length === 0) {
+      setMsg('❌ ' + tAny.sr_customer_required); return
     }
     setSaving(true); setMsg('')
     const total = calcTotal(modal.items)
-    const { data: prof } = await supabase.from('profiles').select('company_id,id').maybeSingle()
-    const payload = {
-      company_id: prof?.company_id,
-      original_transaction_id: modal.original_transaction_id||null,
-      customer_id: modal.customer_id,
-      items: modal.items,
-      total_amount: total,
-      refund_method: modal.refund_method,
-      bank_account_id: modal.refund_method==='cash'?(modal.bank_account_id||null):null,
-      note: modal.note||null,
-      created_by: prof?.id,
-    }
-    const { error } = await supabase.from('sales_returns').insert(payload)
-    if (error) { setMsg('❌ '+error.message); setSaving(false); return }
-
-    if (modal.refund_method==='credit') {
-      const { data: contact } = await supabase.from('contacts').select('current_balance').eq('id',modal.customer_id).maybeSingle()
-      await supabase.from('contacts').update({ current_balance: Number(contact?.current_balance||0)+total }).eq('id',modal.customer_id)
-    } else if (modal.refund_method==='cash' && modal.bank_account_id) {
-      const { data: ba } = await supabase.from('bank_accounts').select('current_balance').eq('id',modal.bank_account_id).maybeSingle()
-      await supabase.from('bank_accounts').update({ current_balance: Number(ba?.current_balance||0)-total }).eq('id',modal.bank_account_id)
-    }
+    const { error } = await supabase.rpc('rpc_record_sales_return_v2', {
+      p_original_transaction_id: modal.original_transaction_id || null,
+      p_customer_id: modal.customer_id,
+      p_items: modal.items,
+      p_total_amount: total,
+      p_refund_method: modal.refund_method,
+      p_bank_account_id: modal.refund_method === 'cash' ? (modal.bank_account_id || null) : null,
+      p_note: modal.note || null,
+    })
+    if (error) { setMsg('❌ ' + error.message); setSaving(false); return }
 
     setModal(null); await fetchAll(); setSaving(false)
-    setMsg('✅ '+tAny.sr_saved); setTimeout(()=>setMsg(''),3000)
+    setMsg('✅ ' + tAny.sr_saved); setTimeout(() => setMsg(''), 3000)
   }
 
   return (
@@ -264,32 +254,25 @@ export default function SalesReturnPage() {
                 </div>
               )}
 
-              <div>
-                <label className="text-xs font-medium text-gray-600 mb-2 block">{tAny.sr_refund_label}</label>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    {val:'credit',icon:'💳',label:tAny.sr_credit,desc:tAny.sr_credit_desc},
-                    {val:'cash',  icon:'💵',label:tAny.sr_cash,  desc:tAny.sr_cash_desc},
-                  ].map(opt=>(
-                    <button key={opt.val} onClick={()=>setModal({...modal,refund_method:opt.val})}
-                      className={`p-3 rounded-xl border-2 text-left transition-all ${modal.refund_method===opt.val?'border-blue-500 bg-blue-50':'border-gray-200'}`}>
-                      <p className="text-lg mb-1">{opt.icon}</p>
-                      <p className="text-sm font-medium">{opt.label}</p>
-                      <p className="text-xs text-gray-500">{opt.desc}</p>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <MoneyFlowMethodPicker
+                value={modal.refund_method}
+                onChange={(value) => setModal({...modal, refund_method: value})}
+                title={tAny.sr_refund_label}
+                options={[
+                  { value:'credit', icon:'💳', label:tAny.sr_credit, description:tAny.sr_credit_desc },
+                  { value:'cash', icon:'💵', label:tAny.sr_cash, description:tAny.sr_cash_desc },
+                ]}
+              />
 
               {modal.refund_method==='cash' && (
-                <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Cash/Bank Account *</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-gray-600 block">Cash/Bank Account *</label>
                   <select value={modal.bank_account_id} onChange={e=>setModal({...modal,bank_account_id:e.target.value})}
-                    className="w-full p-2 border rounded-xl text-sm">
+                    className="w-full min-h-11 p-2.5 border rounded-xl text-sm bg-white">
                     <option value="">{tAny.sr_select}</option>
                     {banks.map(b=><option key={b.id} value={b.id}>{b.account_name}</option>)}
                   </select>
-                  <p className="text-xs text-orange-500 mt-1">⚠️ {tAny.sr_cash_warning}: {calcTotal(modal.items).toLocaleString()} Ks</p>
+                  <p className="text-xs text-orange-500">⚠️ {tAny.sr_cash_warning}: {calcTotal(modal.items).toLocaleString()} Ks</p>
                 </div>
               )}
 
@@ -298,6 +281,18 @@ export default function SalesReturnPage() {
                   💳 {tAny.sr_credit_note}: {calcTotal(modal.items).toLocaleString()} Ks
                 </div>
               )}
+
+              <MoneyFlowImpact
+                direction="out"
+                amount={calcTotal(modal.items)}
+                routeLabel={modal.refund_method==='credit' ? (tAny.sr_credit || 'Customer Credit') : (tAny.sr_cash || 'Cash')}
+                accountLabel={modal.refund_method==='cash'
+                  ? (banks.find((b:any) => b.id === modal.bank_account_id)?.account_name || tAny.sr_select)
+                  : (modal.customer_id ? (customers.find((c:any) => c.id === modal.customer_id)?.contact_name || 'Customer') : undefined)}
+                helper={modal.refund_method==='cash'
+                  ? 'This refund reduces the selected account balance.'
+                  : 'This refund is recorded as customer credit.'}
+              />
 
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">{tAny.sr_note}</label>

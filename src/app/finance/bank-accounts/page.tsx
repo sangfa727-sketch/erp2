@@ -7,6 +7,7 @@ import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import ConfirmModal from '@/components/ui/ConfirmModal'
 import { toEnglishNumber } from '@/lib/utils'
+import { MoneyFlowOverview } from '@/components/finance/MoneyFlowUX'
 
 interface BankAccountType { id: string; name: string; icon: string }
 interface BankAccount {
@@ -168,11 +169,12 @@ export default function BankAccountsPage() {
           </div>
         </div>
 
-        {/* Summary */}
-        <div className="bg-white rounded-2xl p-5 mb-6 border border-gray-200 shadow-sm">
-          <p className="text-sm text-gray-500">{(t as any).bank_total}</p>
-          <p className="text-3xl font-bold mt-1 text-gray-800">{totalBalance.toLocaleString()} <span className="text-lg font-normal">Ks</span></p>
-          <p className="text-sm text-gray-400 mt-1">{accounts.filter(a => a.is_active).length} {(t as any).bank_active}</p>
+        {/* Money Flow Overview */}
+        <div className="mb-6">
+          <MoneyFlowOverview
+            totalBalance={totalBalance}
+            activeAccounts={accounts.filter(a => a.is_active).length}
+          />
         </div>
 
         {/* Account Types Drawer */}

@@ -7,16 +7,17 @@ import { toEnglishNumber } from '@/lib/utils'
 import AppLayout from '@/components/layout/AppLayout'
 import { useI18n } from '@/lib/i18n'
 import ConfirmModal from '@/components/ui/ConfirmModal'
+import { MoneyFlowMethodPicker, MoneyFlowImpact } from '@/components/finance/MoneyFlowUX'
 
 interface Expense {
   id: string; expense_date: string; category: string
   description: string; amount: number; paid_by: string
-  ref_type: string; created_at: string
+  ref_type: string; bank_account_id: string | null; ledger_entry_group_id: string | null; is_voided: boolean; created_at: string
 }
 
 const EMPTY = {
   id: '', expense_date: new Date().toISOString().split('T')[0],
-  category: '', description: '', amount: '', paid_by: 'cash', ref_type: 'general'
+  category: '', description: '', amount: '', paid_by: 'cash', bank_account_id: '', ref_type: 'general'
 }
 
 export default function ExpensesPage() {
@@ -29,6 +30,7 @@ export default function ExpensesPage() {
   ]
 
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [bankAccounts, setBankAccounts] = useState<{id:string;account_name:string;current_balance:number}[]>([])
   const [loading, setLoading] = useState(true)
   const [modal, setModal] = useState<{ open: boolean; mode: 'add'|'edit'; data: any }>({ open: false, mode: 'add', data: EMPTY })
   const [saving, setSaving] = useState(false)
@@ -53,8 +55,12 @@ export default function ExpensesPage() {
       .gte('expense_date', start).lte('expense_date', end)
       .order('expense_date', { ascending: false })
     if (cid) q = q.eq('company_id', cid)
-    const { data } = await q
+    const [{ data }, { data: banks }] = await Promise.all([
+      q,
+      supabase.from('bank_accounts').select('id,account_name,current_balance').eq('company_id', cid || '').eq('is_active', true).eq('is_deleted', false).order('account_name')
+    ])
     setExpenses(data || [])
+    setBankAccounts(banks || [])
     setLoading(false)
   }
 
@@ -77,25 +83,41 @@ export default function ExpensesPage() {
   }
 
   const openAdd = () => setModal({ open: true, mode: 'add', data: { ...EMPTY, category: CATEGORIES[0] } })
-  const openEdit = (e: Expense) => setModal({ open: true, mode: 'edit', data: { ...e, amount: e.amount.toString() } })
+  const openEdit = (e: Expense) => {
+    if (e.ledger_entry_group_id) { setMsg('Posted expense ကို edit မလုပ်နိုင်ပါ။ Reversal flow သုံးရပါမည်။'); return }
+    setModal({ open: true, mode: 'edit', data: { ...e, amount: e.amount.toString() } })
+  }
   const closeModal = () => { setModal({ open: false, mode: 'add', data: EMPTY }); setMsg('') }
 
   const handleSave = async () => {
     const d = modal.data
     if (!d.amount || Number(d.amount) <= 0) { setMsg(t.exp_err_amount); return }
+    if (d.paid_by === 'bank' && !d.bank_account_id) { setMsg('Bank account ရွေးပါ'); return }
     setSaving(true); setMsg('')
-    const { data: profileData } = await supabase.from('profiles').select('company_id')
-    const companyId = profileData?.[0]?.company_id
+    const companyId = await getCompanyId()
     if (!companyId) { setMsg(t.exp_err_company); setSaving(false); return }
-    const payload = {
-      company_id: companyId, expense_date: d.expense_date, category: d.category,
-      description: d.description || null, amount: Number(d.amount),
-      paid_by: d.paid_by, ref_type: d.ref_type,
-    }
+
     if (modal.mode === 'add') {
-      const { error } = await supabase.from('expenses').insert(payload)
+      const { error } = await supabase.rpc('rpc_record_expense_v2', {
+        p_expense_date: d.expense_date,
+        p_category: d.category,
+        p_description: d.description || null,
+        p_amount: Number(d.amount),
+        p_paid_by: d.paid_by,
+        p_bank_account_id: d.paid_by === 'bank' ? d.bank_account_id : null,
+        p_ref_type: d.ref_type,
+        p_ref_id: null,
+      })
       if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
     } else {
+      if (d.ledger_entry_group_id) {
+        setMsg('Posted expense ကို edit မလုပ်နိုင်ပါ။'); setSaving(false); return
+      }
+      const payload = {
+        company_id: companyId, expense_date: d.expense_date, category: d.category,
+        description: d.description || null, amount: Number(d.amount),
+        paid_by: d.paid_by, bank_account_id: d.paid_by === 'bank' ? (d.bank_account_id || null) : null, ref_type: d.ref_type,
+      }
       const { error } = await supabase.from('expenses').update(payload).eq('id', d.id)
       if (error) { setMsg('Error: ' + error.message); setSaving(false); return }
     }
@@ -106,6 +128,11 @@ export default function ExpensesPage() {
   }
 
   const handleDelete = (id: string) => {
+    const row = expenses.find(e => e.id === id)
+    if (row?.ledger_entry_group_id) {
+      setMsg('Posted expense ကို delete မလုပ်နိုင်ပါ။ Reversal flow သုံးရပါမည်.')
+      return
+    }
     showConfirm(t.exp_delete_confirm, async () => {
       await supabase.from('expenses').delete().eq('id', id)
       await fetchAll()
@@ -117,17 +144,16 @@ export default function ExpensesPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-800">💸 {t.page_expenses}</h1>
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <header className="mb-4"><div className="flex items-center justify-between gap-3"><div><p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • EXPENSE</p><h1 className="mt-1 text-2xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဘာအတွက်? ဘယ်လောက်? ဘယ်ကပေး?</h1></div>
           <div className="flex gap-2 flex-wrap">
-            <input type="month" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }}
-              className="p-2 border rounded-lg text-sm" />
-            <button onClick={openAdd} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">
+            <input type="month" className="material-control min-h-[48px] px-3 rounded-xl text-sm p-2 border" value={filterMonth} onChange={e => { setFilterMonth(e.target.value); setFilterCategory('') }} />
+            <button onClick={openAdd} className="material-control min-h-[48px] px-4 rounded-xl text-sm font-semibold bg-blue-600 text-white">
               {t.exp_add_btn}
             </button>
           </div>
         </div>
+        </header>
 
         {/* Summary Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -174,7 +200,7 @@ export default function ExpensesPage() {
           {loading ? <p className="text-center text-gray-400 py-8">{t.loading}</p>
           : filtered.length === 0 ? <p className="text-center text-gray-400 py-8">{t.exp_no_data}</p>
           : filtered.map(e => (
-            <div key={e.id} className="bg-white rounded-xl shadow-sm p-4 border-l-4 border-red-400">
+            <div key={e.id} className="material-control rounded-xl p-4 border-l-4 border-red-400">
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <span className="text-xs font-medium bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">{e.category}</span>
@@ -190,7 +216,7 @@ export default function ExpensesPage() {
             </div>
           ))}
           {filtered.length > 0 && (
-            <div className="bg-gray-50 rounded-xl p-3 text-sm font-semibold flex justify-between">
+            <div className="material-control rounded-xl p-3 text-sm font-semibold flex justify-between">
               <span>{t.exp_footer_total} ({filtered.length} {t.exp_items})</span>
               <span className="text-red-600">K {filteredTotal.toLocaleString()}</span>
             </div>
@@ -246,34 +272,48 @@ export default function ExpensesPage() {
 
       {modal.open && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-xl p-5 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
+          <div className="payment-task rounded-t-2xl md:rounded-xl p-4 md:p-6 w-full md:max-w-md shadow-xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-bold mb-4">{modal.mode === 'add' ? t.exp_modal_add : t.exp_modal_edit}</h2>
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_date}</label>
                   <input type="date" value={d.expense_date} onChange={e => setModal(m => ({ ...m, data: { ...m.data, expense_date: e.target.value } }))}
-                    className="w-full p-2 border rounded-lg text-sm" />
+                    className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_paid_by}</label>
-                  <select value={d.paid_by} onChange={e => setModal(m => ({ ...m, data: { ...m.data, paid_by: e.target.value } }))}
-                    className="w-full p-2 border rounded-lg text-sm">
-                    <option value="cash">{t.exp_paid_cash}</option>
-                    <option value="bank">{t.exp_paid_bank}</option>
-                  </select>
+                  <MoneyFlowMethodPicker
+                    value={d.paid_by}
+                    onChange={(value) => setModal(m => ({ ...m, data: { ...m.data, paid_by: value, bank_account_id: value === 'bank' ? m.data.bank_account_id : '' } }))}
+                    title="Expense Payment Route"
+                    options={[
+                      { value: 'cash', icon: '💵', label: t.exp_paid_cash, description: 'Cash balance လျော့မည်' },
+                      { value: 'bank', icon: '🏦', label: t.exp_paid_bank, description: 'Bank route ဖြင့် ပေးချေမည်' },
+                    ]}
+                  />
                 </div>
               </div>
+
+              {d.paid_by === 'bank' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Bank Account</label>
+                  <select value={d.bank_account_id || ''} onChange={e => setModal(m => ({ ...m, data: { ...m.data, bank_account_id: e.target.value } }))}
+                    className="pos-search min-h-[48px] w-full p-2 rounded-xl text-sm">
+                    <option value="">Bank account ရွေးပါ</option>
+                    {bankAccounts.map(b => <option key={b.id} value={b.id}>{b.account_name} · K {Number(b.current_balance || 0).toLocaleString()}</option>)}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{t.exp_field_category}</label>
                 <div className="flex gap-1">
                   <select value={d.category} onChange={e => setModal(m => ({ ...m, data: { ...m.data, category: e.target.value } }))}
-                    className="flex-1 p-2 border rounded-lg text-sm">
+                    className="pos-search min-h-[48px] flex-1 p-2 rounded-xl text-sm">
                     {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <button type="button" onClick={() => { setShowNewCat(!showNewCat); setNewCat('') }}
-                    className="px-3 py-2 bg-green-500 text-white rounded-lg text-lg font-bold hover:bg-green-600">+</button>
+                    className="material-control min-h-[48px] min-w-[48px] bg-green-500 text-white rounded-xl text-lg font-bold">+</button>
                   {!CATEGORIES.includes(d.category) && customCats.includes(d.category) && (
                     <button type="button" onClick={() => {
                       setCustomCats(prev => prev.filter(c => c !== d.category))
@@ -312,12 +352,22 @@ export default function ExpensesPage() {
                   onChange={e => { const v = toEnglishNumber(e.target.value); if(/^[0-9.]*$/.test(v)) setModal(m => ({ ...m, data: { ...m.data, amount: v } })) }}
                   className="w-full p-2 border rounded-lg text-sm" placeholder="0" />
               </div>
+
+              <MoneyFlowImpact
+                direction="out"
+                amount={Number(d.amount || 0)}
+                routeLabel={d.paid_by === 'bank' ? 'Expense → Bank Account' : 'Expense → Cash'}
+                accountLabel={d.paid_by === 'bank' ? (bankAccounts.find(b => b.id === d.bank_account_id)?.account_name || 'Bank Account') : 'Cash'}
+                helper={d.paid_by === 'bank'
+                  ? (d.bank_account_id ? 'ရွေးထားသော bank account ကို expense record နှင့် ချိတ်ဆက်မည်။' : 'Bank account ရွေးပါ။')
+                  : 'Expense သိမ်းသောအခါ cash expense အဖြစ် မှတ်တမ်းတင်မည်။'}
+              />
             </div>
 
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={closeModal} className="flex-1 py-2 border rounded-lg text-sm hover:bg-gray-50">{t.btn_cancel}</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm disabled:opacity-50">
+              <button onClick={closeModal} className="material-control flex-1 min-h-[52px] rounded-xl text-sm">{t.btn_cancel}</button>
+              <button onClick={handleSave} disabled={saving} className="material-control flex-1 min-h-[52px] bg-blue-600 text-white rounded-xl text-sm disabled:opacity-50">
                 {saving ? t.loading : t.btn_save}
               </button>
             </div>

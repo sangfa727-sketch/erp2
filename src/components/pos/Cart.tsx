@@ -92,10 +92,10 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
   }
 
   return (
-    <div className="flex flex-col h-full" style={{backgroundColor: 'var(--color-card, #ffffff)', color: 'var(--color-text, #111827)'}}>
+    <div className="erp-pos-cart flex flex-col h-full" style={{backgroundColor: 'var(--surface-1)', color: 'var(--text-strong)'}}>
 
       {/* Header */}
-      <div className="px-4 pt-4 pb-2 flex items-center justify-between"
+      <div className="px-4 pt-3 pb-2 flex items-center justify-between"
         style={{borderBottom: '1px solid var(--color-border, #e5e7eb)'}}>
         <h2 className="font-bold text-base">🛒 {t.cart_title}</h2>
         {items.length > 0 && (
@@ -150,7 +150,7 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
               <p className="font-semibold text-sm flex-1 pr-2 leading-tight"
                 style={{color: 'var(--color-text, #111827)'}}>{item.name}</p>
               <button onClick={() => onRemove(item.id)}
-                className="w-5 h-5 rounded-full flex items-center justify-center text-xs flex-shrink-0"
+                className="material-control w-8 h-8 rounded-lg flex items-center justify-center text-xs flex-shrink-0"
                 style={{backgroundColor: '#fee2e2', color: '#ef4444'}}>✕</button>
             </div>
 
@@ -186,9 +186,9 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
               {/* Qty controls */}
               <div className="flex items-center gap-1">
                 <button onClick={() => onUpdateQuantity(item.id, item.quantity - 1)}
-                  className="w-7 h-7 rounded-lg font-bold text-sm flex items-center justify-center"
+                  className="material-control w-11 h-11 rounded-xl font-bold text-lg flex items-center justify-center"
                   style={{backgroundColor: 'var(--color-card, #fff)', border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}}>−</button>
-                <span className="w-8 text-center text-sm font-bold"
+                <span className="w-9 text-center text-base font-bold"
                   style={{color: 'var(--color-text, #111827)'}}>{item.quantity}</span>
                 <button onClick={() => onUpdateQuantity(item.id, item.quantity + 1)}
                   className="w-7 h-7 rounded-lg font-bold text-sm flex items-center justify-center"
@@ -216,7 +216,7 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
           </div>
           <button
             onClick={() => onCheckout(customerId || undefined, customerName || undefined)}
-            className="w-full py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all active:scale-95"
+            className="material-control w-full min-h-[52px] py-3 rounded-xl font-bold text-base text-white shadow-md transition-all active:scale-95"
             style={{backgroundColor: 'var(--color-primary, #2563eb)'}}>
             {t.cart_checkout}
           </button>
@@ -238,7 +238,7 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
               <>
                 <input type="text" value={search} onChange={e => setSearch(e.target.value)}
                   placeholder={t.cart_search_placeholder}
-                  className="w-full p-2.5 rounded-xl text-sm mb-3 outline-none"
+                  className="pos-search w-full px-3 text-sm mb-3 outline-none"
                   style={{backgroundColor: 'var(--color-bg, #f9fafb)', border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}}
                   autoFocus />
                 <div className="max-h-52 overflow-y-auto mb-3 space-y-1">
@@ -246,7 +246,7 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
                     <p className="text-center text-sm py-4" style={{color: 'var(--color-text-sub, #6b7280)'}}>{t.cart_not_found}</p>
                   ) : filtered.map(c => (
                     <button key={c.id} onClick={() => selectCustomer(c)}
-                      className="w-full text-left px-3 py-2.5 rounded-xl text-sm flex justify-between transition-all"
+                      className="material-control w-full min-h-[48px] text-left px-3 py-2.5 rounded-xl text-sm flex justify-between transition-all"
                       style={{color: 'var(--color-text, #111827)'}}
                       onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--color-bg, #f9fafb)')}
                       onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}>
@@ -256,7 +256,7 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
                   ))}
                 </div>
                 <button onClick={() => setShowNewForm(true)}
-                  className="w-full py-2.5 rounded-xl text-sm font-medium border-2 border-dashed transition-all"
+                  className="material-control w-full min-h-[48px] py-2.5 rounded-xl text-sm font-medium border-2 border-dashed transition-all"
                   style={{borderColor: 'var(--color-primary, #2563eb)', color: 'var(--color-primary, #2563eb)'}}>
                   {t.cart_add_new_customer}
                 </button>
@@ -266,21 +266,21 @@ const Cart: React.FC<CartProps> = ({ items, onRemove, onUpdateQuantity, onChecko
                 <p className="text-sm font-medium mb-3" style={{color: 'var(--color-text, #111827)'}}>{t.cart_new_customer}</p>
                 <input value={newName} onChange={e => setNewName(e.target.value)}
                   placeholder={t.cart_name_placeholder}
-                  className="w-full p-2.5 rounded-xl text-sm mb-2 outline-none"
+                  className="pos-search w-full px-3 text-sm mb-2 outline-none"
                   style={{backgroundColor: 'var(--color-bg, #f9fafb)', border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}}
                   autoFocus />
                 <input value={newPhone} onChange={e => setNewPhone(e.target.value)}
                   placeholder={t.cart_phone_placeholder}
-                  className="w-full p-2.5 rounded-xl text-sm mb-3 outline-none"
+                  className="pos-search w-full px-3 text-sm mb-3 outline-none"
                   style={{backgroundColor: 'var(--color-bg, #f9fafb)', border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}} />
                 <div className="flex gap-2">
                   <button onClick={() => setShowNewForm(false)}
-                    className="flex-1 py-2.5 rounded-xl text-sm"
+                    className="material-control flex-1 min-h-[48px] py-2.5 rounded-xl text-sm"
                     style={{border: '1px solid var(--color-border, #e5e7eb)', color: 'var(--color-text, #111827)'}}>
                     {t.cart_back}
                   </button>
                   <button onClick={handleAddNew} disabled={saving || !newName.trim()}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
+                    className="material-control flex-1 min-h-[48px] py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50"
                     style={{backgroundColor: 'var(--color-primary, #2563eb)'}}>
                     {saving ? '...' : t.cart_add_btn}
                   </button>

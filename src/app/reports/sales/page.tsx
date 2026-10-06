@@ -73,10 +73,10 @@ export default function SalesReportPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-xl md:text-2xl font-bold" style={{color:'var(--color-text)'}}>📈 {t.page_reports}</h1>
+          <h1 className="text-xl md:text-2xl font-bold" style={{color:'var(--color-text)'}}>📈 Sales</h1>
           {filterMode !== 'all' && (
             <button onClick={() => setFilterMode('all')}
               className="text-xs px-3 py-1.5 rounded-full transition-all active:scale-95"
@@ -91,7 +91,7 @@ export default function SalesReportPage() {
         </div>
 
         {/* Date Picker - Floating Style */}
-        <div className="rounded-2xl p-4 mb-4" style={{
+        <div className="material-control rounded-xl p-3 mb-4" style={{
           background: 'var(--color-card)',
           border: '1px solid var(--color-border)',
           boxShadow: '0 4px 20px rgba(0,0,0,0.06)'
@@ -100,7 +100,7 @@ export default function SalesReportPage() {
             <span className="text-sm font-medium" style={{color:'var(--color-text-secondary)'}}>{t.rep_date_label}</span>
             <input type="date" value={date}
               onChange={e => { setDate(e.target.value); setFilterMode('all') }}
-              className="flex-1 p-2.5 rounded-xl text-sm outline-none transition-all"
+              className="pos-search flex-1 min-h-[48px] p-2.5 rounded-xl text-sm outline-none transition-all"
               style={{
                 background: 'var(--color-bg)',
                 border: '1px solid var(--color-border)',
@@ -109,11 +109,11 @@ export default function SalesReportPage() {
           </div>
         </div>
 
-        {/* Summary Cards - Gradient Floating Style */}
+        {/* Compact sales summary */}
         <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
           {/* Total Sales */}
           <button onClick={() => handleCardClick('all')}
-            className={`rounded-2xl p-3 md:p-5 text-left transition-all duration-200 active:scale-[0.98] ${
+            className={`material-control rounded-xl p-3 md:p-4 text-left transition-all duration-200 active:scale-[0.98] ${
               filterMode === 'all' ? 'ring-2 ring-blue-400 ring-offset-2' : ''
             }`}
             style={{
@@ -222,7 +222,7 @@ export default function SalesReportPage() {
                 const balance = Number(txn.total_amount) - Number(txn.amount_received)
                 return (
                   <div key={txn.id} 
-                    className="rounded-2xl p-4 transition-all active:scale-[0.99]"
+                    className="material-control rounded-xl p-4 transition-all active:scale-[0.99]"
                     style={{
                       background: 'var(--color-card)',
                       border: '1px solid var(--color-border)',
