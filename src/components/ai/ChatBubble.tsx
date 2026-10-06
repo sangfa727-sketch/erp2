@@ -1061,6 +1061,7 @@ export default function ChatBubble() {
           const dy = Math.abs(e.clientY - dragStartRef.current.y);
           if (dx < 5 && dy < 5) handleOpen();
         }}
+        className="erp2-chatbubble-launcher"
         style={{
           position: 'fixed',
           left: position.x,
@@ -1106,6 +1107,7 @@ export default function ChatBubble() {
 
   return (
     <div
+      className="erp2-chatbubble-panel"
       style={{
         position: 'fixed',
         right: 20,
@@ -1769,6 +1771,34 @@ if (
       from { transform: translateY(20px); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
+    /* Mobile: compact bottom-sheet interaction; keep the launcher reachable above browser UI. */
+    @media (max-width: 640px) {
+      .erp2-chatbubble-launcher {
+        left: auto !important;
+        right: max(16px, env(safe-area-inset-right)) !important;
+        top: auto !important;
+        bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        width: 56px !important;
+        height: 56px !important;
+        touch-action: manipulation !important;
+      }
+      .erp2-chatbubble-panel {
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: min(86dvh, 720px) !important;
+        max-height: calc(100dvh - env(safe-area-inset-top)) !important;
+        border-radius: 20px 20px 0 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+      }
+      .erp2-chatbubble-panel form {
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+      }
+    }
+
     @keyframes cbMsgIn {
       from { transform: translateY(6px); opacity: 0; }
       to   { transform: translateY(0);   opacity: 1; }
