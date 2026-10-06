@@ -60,14 +60,14 @@ const TRANSCRIBE_ENDPOINT = '/api/voice/gemini-transcribe';
 
 // Recording behavior
 const SILENCE_THRESHOLD = 18;   // 0-255 byte amplitude; below = silent
-const SILENCE_DURATION_MS = 1200; // ms of continuous silence → auto-stop
-const MIN_RECORDING_MS = 700;   // don't auto-stop before this (after speech)
-const MAX_RECORDING_MS = 30000; // safety cap
+const SILENCE_DURATION_MS = 700; // ms of continuous silence → auto-stop
+const MIN_RECORDING_MS = 450;   // don't auto-stop before this (after speech)
+const MAX_RECORDING_MS = 20000; // safety cap
 
 // Speech-onset detection (anti-noise / false-trigger fix)
 const SPEECH_ONSET_THRESHOLD = 28; // higher than silence — requires real speech
-const SPEECH_ONSET_WINDOW_MS = 3000; // wait this long for speech to start
-const NOISE_FLOOR_FRAMES = 8;     // consecutive frames above threshold = real speech
+const SPEECH_ONSET_WINDOW_MS = 1800; // wait this long for speech to start
+const NOISE_FLOOR_FRAMES = 5;     // consecutive frames above threshold = real speech
 
 // =============================================================================
 // Localization
