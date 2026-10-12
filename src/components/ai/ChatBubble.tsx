@@ -653,6 +653,7 @@ export default function ChatBubble() {
           (m, i, arr) =>
             !(i === arr.length - 1 && m.role === 'assistant' && !m.content)
         );
+        const aiRequestStartedAt = performance.now();
         const res = await fetch(N8N_WEBHOOK, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -669,6 +670,17 @@ export default function ChatBubble() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        // This measures total n8n wait (workflow + model + response transfer).
+        // It does not log prompt, transcript, reply, or session identifiers.
+        console.info('[ERP2 latency]', {
+          phase: 'n8n_chat',
+          client_ms: Math.round(performance.now() - aiRequestStartedAt),
+          ok: res.ok,
+          response_bytes: (() => {
+            try { return new TextEncoder().encode(JSON.stringify(data)).length; }
+            catch { return null; }
+          })(),
+        });
         const reply =
           data?.output ||
           data?.reply ||
@@ -795,11 +807,22 @@ export default function ChatBubble() {
         const formData = new FormData();
         formData.append('audio', blob, 'voice.webm');
         formData.append('language', session.language);
+        const transcribeStartedAt = performance.now();
         const res = await fetch(TRANSCRIBE_ENDPOINT, {
           method: 'POST',
           body: formData,
         });
         const data = await res.json().catch(() => ({}));
+        // Log timings only; never log audio, transcript, session ID, or user text.
+        console.info('[ERP2 latency]', {
+          phase: 'transcription',
+          client_ms: Math.round(performance.now() - transcribeStartedAt),
+          server_ms: Number.isFinite(Number(data?.duration_ms))
+            ? Number(data.duration_ms)
+            : null,
+          audio_bytes: blob.size,
+          ok: res.ok,
+        });
         if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
         const transcript = String(data?.transcript || '').trim();
         if (!transcript) {
