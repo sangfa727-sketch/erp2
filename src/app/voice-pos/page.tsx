@@ -250,6 +250,7 @@ export default function VoicePosPage() {
 
       // Auto-confirm countdown if high confidence + not ambiguous + not credit
       const highConfidence =
+        data.payment_type === 'cash' &&
         data.product.confidence > 0.85 &&
         data.gemini_confidence > 0.85 &&
         !data.product.ambiguous
