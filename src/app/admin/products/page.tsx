@@ -109,18 +109,18 @@ export default function AdminProductsPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <h1 className="text-xl md:text-2xl font-bold" style={{color:'var(--color-text)'}}>🛒 {t.prod_title}</h1>
           <div className="flex gap-2 items-center">
             <button onClick={() => setShowCatModal(true)}
-              className="text-xs px-3 py-2 rounded-xl font-medium transition-colors hover:opacity-80"
+              className="material-control min-h-[48px] text-xs px-3 py-2 rounded-xl font-medium transition-colors hover:opacity-80"
               style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
               {t.prod_cat_btn}
             </button>
             <button onClick={openAdd}
-              className="text-xs px-4 py-2 rounded-xl font-medium text-white transition-colors hover:opacity-90"
+              className="material-control min-h-[48px] text-xs px-4 py-2 rounded-xl font-medium text-white transition-colors hover:opacity-90"
               style={{backgroundColor:'var(--color-primary)'}}>
               {t.prod_add_btn}
             </button>
@@ -128,9 +128,9 @@ export default function AdminProductsPage() {
         </div>
 
         {/* Summary Cards - Floating Style */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
           {/* Total Products */}
-          <div className="rounded-2xl p-4" style={{
+          <div className="material-control rounded-xl p-4" style={{
             background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
             border: '1px solid #bfdbfe',
             boxShadow: '0 4px 20px rgba(59,130,246,0.1), 0 1px 4px rgba(0,0,0,0.05)'
@@ -175,7 +175,7 @@ export default function AdminProductsPage() {
         {/* Search */}
         <div className="mb-4">
           <input type="text" placeholder={t.btn_search} value={search} onChange={e => setSearch(e.target.value)}
-            className="w-full p-2.5 rounded-xl text-sm outline-none transition-all"
+            className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm outline-none transition-all"
             style={{
               backgroundColor:'var(--color-card)', 
               border:'1px solid var(--color-border)', 
@@ -206,7 +206,7 @@ export default function AdminProductsPage() {
               {filtered.map(p => {
                 const isLow = Number(p.stock_qty) <= Number(p.reorder_level)
                 return (
-                  <div key={p.id} data-vocab-row="product" className="rounded-2xl p-4 transition-all active:scale-[0.99]"
+                  <div key={p.id} data-vocab-row="product" className="material-control rounded-xl p-4 transition-all active:scale-[0.99]"
                     style={{
                       backgroundColor:'var(--color-card)', 
                       border:'1px solid var(--color-border)',
@@ -220,7 +220,7 @@ export default function AdminProductsPage() {
                       </div>
                       <div className="flex gap-1.5 flex-shrink-0">
                         <button onClick={() => openEdit(p)}
-                          className="px-3 py-1.5 rounded-xl text-xs font-medium text-white transition-colors hover:opacity-90"
+                          className="material-control min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-medium text-white transition-colors hover:opacity-90"
                           style={{backgroundColor:'#f59e0b'}}>{t.btn_edit}</button>
                         <button onClick={() => handleDelete(p.id)}
                           className="px-3 py-1.5 rounded-xl text-xs font-medium text-white transition-colors hover:opacity-90"
@@ -247,7 +247,7 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Desktop: Table view - Floating Style */}
-            <div className="hidden md:block rounded-2xl overflow-hidden" style={{
+            <div className="hidden md:block material-control rounded-xl overflow-hidden" style={{
               backgroundColor:'var(--color-card)', 
               border:'1px solid var(--color-border)',
               boxShadow:'0 4px 20px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.04)'
@@ -310,7 +310,7 @@ export default function AdminProductsPage() {
       {/* Add/Edit Modal - Enhanced Style */}
       {modal.open && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-end md:items-center justify-center z-50 p-0 md:p-4">
-          <div className="w-full md:max-w-md max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-5"
+          <div className="payment-task w-full md:max-w-md max-h-[92vh] overflow-y-auto rounded-t-2xl md:rounded-2xl p-5"
             style={{
               backgroundColor:'var(--color-card)', 
               color:'var(--color-text)',
@@ -321,14 +321,14 @@ export default function AdminProductsPage() {
               <div>
                 <label className="block text-xs font-medium mb-1" style={{color:'var(--color-text-sub)'}}>{t.prod_field_name}</label>
                 <input type="text" value={modal.data.name || ''} data-vocab-input="product" onChange={e => setModal(m => ({ ...m, data: { ...m.data, name: e.target.value } }))}
-                  className="w-full p-2.5 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                  className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500"
                   style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}
                   placeholder={t.prod_name_placeholder} />
               </div>
               <div>
                 <label className="block text-xs font-medium mb-1" style={{color:'var(--color-text-sub)'}}>{t.prod_field_category}</label>
                 <select value={modal.data.category_id || ''} onChange={e => setModal(m => ({ ...m, data: { ...m.data, category_id: e.target.value || null } }))}
-                  className="w-full p-2.5 rounded-xl text-sm outline-none transition-all"
+                  className="pos-search w-full min-h-[48px] p-3 rounded-xl text-sm outline-none transition-all"
                   style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
                   <option value="">{t.prod_no_category}</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -375,9 +375,9 @@ export default function AdminProductsPage() {
             </div>
             {msg && <p className={'text-sm mt-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={closeModal} className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-colors"
+              <button onClick={closeModal} className="material-control flex-1 min-h-[52px] py-2.5 rounded-xl text-sm font-medium transition-colors"
                 style={{border:'1px solid var(--color-border)', color:'var(--color-text)'}}>{t.btn_cancel}</button>
-              <button onClick={handleSave} disabled={saving} className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50 transition-colors hover:opacity-90"
+              <button onClick={handleSave} disabled={saving} className="material-control flex-1 min-h-[52px] py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-50 transition-colors hover:opacity-90"
                 style={{backgroundColor:'var(--color-primary)'}}>
                 {saving ? t.loading : '✅ ' + t.btn_save}
               </button>
@@ -389,7 +389,7 @@ export default function AdminProductsPage() {
       {/* Category Modal - Enhanced Style */}
       {showCatModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="rounded-2xl p-5 w-full max-w-sm"
+          <div className="payment-task rounded-t-2xl sm:rounded-2xl p-5 w-full max-w-sm"
             style={{
               backgroundColor:'var(--color-card)', 
               color:'var(--color-text)',
@@ -399,10 +399,10 @@ export default function AdminProductsPage() {
             <div className="flex gap-2 mb-4">
               <input type="text" value={newCatName} onChange={e => setNewCatName(e.target.value)}
                 placeholder={t.prod_cat_placeholder}
-                className="flex-1 p-2.5 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-purple-500"
+                className="pos-search flex-1 min-h-[48px] p-3 rounded-xl text-sm outline-none transition-all focus:ring-2 focus:ring-purple-500"
                 style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
               <button onClick={handleAddCategory}
-                className="px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-colors hover:opacity-90"
+                className="material-control min-h-[48px] px-4 py-2.5 rounded-xl text-sm font-medium text-white transition-colors hover:opacity-90"
                 style={{backgroundColor:'#9333ea'}}>{t.prod_cat_add_btn}</button>
             </div>
             <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -416,7 +416,7 @@ export default function AdminProductsPage() {
               ))}
             </div>
             <button onClick={() => setShowCatModal(false)}
-              className="mt-4 w-full py-2.5 rounded-xl text-sm font-medium transition-colors"
+              className="material-control mt-4 w-full min-h-[52px] py-2.5 rounded-xl text-sm font-medium transition-colors"
               style={{border:'1px solid var(--color-border)', color:'var(--color-text)'}}>{t.prod_cat_close}</button>
           </div>
         </div>

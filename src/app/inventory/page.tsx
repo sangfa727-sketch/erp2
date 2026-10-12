@@ -65,18 +65,18 @@ export default function InventoryPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-xl font-bold" style={{color:'var(--color-text)'}}>📦 {t.inv_title}</h1>
-          <a href="/pos" className="text-xs px-3 py-1.5 rounded-lg"
-            style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-primary)'}}>{t.inv_back_pos}</a>
-        </div>
+      <main className="px-3 py-4 md:p-6 max-w-5xl mx-auto">
+        <header className="mb-4 md:mb-5">
+          <div className="flex items-center justify-between gap-3">
+            <div><p className="text-xs font-semibold uppercase tracking-[0.16em]" style={{color:'var(--color-text-secondary)'}}>ERP2 • STOCK</p><h1 className="mt-1 text-2xl font-bold tracking-tight" style={{color:'var(--color-text)'}}>ဘာပစ္စည်း? ဘယ်လောက်ကျန်?</h1></div>
+            <a href="/pos" className="material-control text-xs font-semibold px-3 py-2 rounded-lg" style={{color:'var(--color-primary)'}}>{t.inv_back_pos}</a>
+          </div>
+        </header>
 
         {/* Low stock alert */}
         {lowStock.length > 0 && (
-          <div className="mb-4 p-3 rounded-xl" style={{backgroundColor:'#fef2f2', border:'1px solid #fecaca'}}>
-            <p className="text-sm font-semibold text-red-700 mb-2">{t.inv_low_stock_alert} ({lowStock.length} {t.inv_items})</p>
+          <div className="mb-4 p-3 rounded-xl" style={{background:'var(--surface-1)', border:'1px solid #fecaca'}}>
+            <p className="text-sm font-semibold text-red-700 mb-2">⚠️ {t.inv_low_stock_alert} ({lowStock.length} {t.inv_items})</p>
             <div className="flex flex-wrap gap-1.5">
               {lowStock.map(p => (
                 <span key={p.id} className="text-xs px-2 py-1 rounded-lg font-medium" style={{backgroundColor:'#fee2e2', color:'#dc2626'}}>
@@ -89,9 +89,10 @@ export default function InventoryPage() {
 
         {/* Search */}
         <div className="mb-4">
-          <input type="text" placeholder={t.inv_search} value={search}
+          <input type="search" placeholder={t.inv_search} value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full p-2.5 rounded-xl text-sm outline-none"
+            autoComplete="off" inputMode="search"
+            className="pos-search w-full p-3 rounded-xl text-sm outline-none"
             style={{backgroundColor:'var(--color-card)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
         </div>
 
@@ -106,7 +107,7 @@ export default function InventoryPage() {
               {filtered.map(p => {
                 const isLow = p.stock_qty <= p.reorder_level
                 return (
-                  <div key={p.id} className="rounded-xl p-4"
+                  <div key={p.id} className="material-control rounded-xl p-4"
                     style={{backgroundColor:'var(--color-card)', border:`1px solid ${isLow ? '#fecaca' : 'var(--color-border)'}`, boxShadow:'0 1px 3px rgba(0,0,0,0.05)'}}>
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex-1 min-w-0 pr-2">
@@ -130,12 +131,12 @@ export default function InventoryPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-2">
                       <button onClick={() => openModal('in', p)}
-                        className="py-2 rounded-xl text-xs font-semibold text-white"
+                        className="material-control min-h-[48px] py-2 rounded-xl text-xs font-semibold text-white"
                         style={{backgroundColor:'var(--color-primary)'}}>
                         {t.inv_btn_stock_in}
                       </button>
                       <button onClick={() => openModal('adjust', p)}
-                        className="py-2 rounded-xl text-xs font-semibold"
+                        className="material-control min-h-[48px] py-2 rounded-xl text-xs font-semibold"
                         style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}}>
                         {t.inv_btn_adjust}
                       </button>
@@ -186,12 +187,12 @@ export default function InventoryPage() {
             </div>
           </>
         )}
-      </div>
+      </main>
 
       {/* Modal */}
       {modal.type && modal.product && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="rounded-xl p-5 w-full max-w-sm shadow-xl"
+        <div className="fixed inset-0 bg-black/50 flex items-end sm:items-center z-50 p-3 sm:p-4">
+          <div className="payment-task rounded-t-2xl sm:rounded-xl p-5 w-full max-w-sm shadow-xl"
             style={{backgroundColor:'var(--color-card)', color:'var(--color-text)'}}>
             <h2 className="text-lg font-bold mb-1">
               {modal.type === 'in' ? t.inv_modal_stock_in : t.inv_modal_adjust}
@@ -203,14 +204,14 @@ export default function InventoryPage() {
               </label>
               <input type="number" value={qty} onChange={e => setQty(e.target.value)}
                 placeholder={modal.type === 'in' ? t.inv_placeholder_in : t.inv_placeholder_adjust}
-                className="w-full p-2.5 rounded-lg text-sm outline-none"
+                className="pos-search w-full min-h-[56px] p-3 rounded-lg text-lg outline-none"
                 style={{backgroundColor:'var(--color-bg)', border:'1px solid var(--color-border)', color:'var(--color-text)'}} />
             </div>
             {msg && <p className={'text-sm mb-3 ' + (msg.includes('✅') ? 'text-green-600' : 'text-red-500')}>{msg}</p>}
             <div className="flex gap-2">
-              <button onClick={closeModal} className="flex-1 py-2.5 rounded-lg text-sm"
+              <button onClick={closeModal} className="material-control flex-1 min-h-[52px] py-2.5 rounded-lg text-sm"
                 style={{border:'1px solid var(--color-border)', color:'var(--color-text)'}}>{t.btn_cancel}</button>
-              <button onClick={handleSubmit} disabled={saving} className="flex-1 py-2.5 rounded-lg text-sm font-medium text-white disabled:opacity-50"
+              <button onClick={handleSubmit} disabled={saving} className="material-control flex-1 min-h-[52px] py-2.5 rounded-lg text-sm font-semibold text-white disabled:opacity-50"
                 style={{backgroundColor:'var(--color-primary)'}}>
                 {saving ? t.loading : t.btn_save}
               </button>

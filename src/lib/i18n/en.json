@@ -438,6 +438,7 @@
   "rep_cash_tag": "💵 Cash",
   "rep_credit_tag": "📒 Credit",
   "finance": "Finance",
+  "money_flow": "Money Flow Ledger",
   "bank_accounts": "Bank Accounts",
   "ar": "Receivables (AR)",
   "ap": "Payables (AP)",

@@ -59,25 +59,20 @@ export default function ProductGrid({ onAddToCart }: { onAddToCart: (p: any) => 
   }
 
   return (
-    <div className="p-4 h-full flex flex-col">
+    <div className="p-3 md:p-4 h-full flex flex-col">
       {/* Search + Barcode */}
-      <div className="flex gap-2 mb-4">
+      <div className="pos-task-bar sticky top-0 z-10 flex gap-2 p-2 mb-3">
         <input
           type="text"
           placeholder={t.product_search}
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
-          className="flex-1 p-2.5 rounded-xl outline-none text-sm"
-          style={{
-            backgroundColor: 'var(--color-bg, #f9fafb)',
-            border: '1px solid var(--color-border, #e5e7eb)',
-            color: 'var(--color-text, #111827)',
-          }}
+          className="pos-search flex-1 px-3 outline-none text-sm" autoComplete="off" inputMode="search"
         />
         <button
           onClick={() => setShowScanner(true)}
           title="Barcode Scanner"
-          className="px-3 py-2.5 rounded-xl font-medium text-white transition-all active:scale-95"
+          className="pos-scan material-control px-3 font-medium text-white transition-all active:scale-95"
           style={{backgroundColor: 'var(--color-primary, #2563eb)', minWidth: '44px'}}>
           📷
         </button>
@@ -100,39 +95,20 @@ export default function ProductGrid({ onAddToCart }: { onAddToCart: (p: any) => 
           </div>
         </div>
       ) : (
-        <div className="grid gap-3 overflow-y-auto flex-1" style={{gridTemplateColumns:"repeat(auto-fill,minmax(140px,1fr))",alignContent:"start"}}>
+        <div className="pos-product-grid grid gap-2.5 overflow-y-auto flex-1 content-start">
           {filtered.map(product => (
             <button
               key={product.id}
               onClick={() => product.stock_qty > 0 && onAddToCart({...product, cost_price: product.base_cost})}
               disabled={product.stock_qty === 0}
-              className="rounded-xl text-left transition-all active:scale-95 disabled:opacity-40 flex flex-col"
-              style={{
-                backgroundColor: 'var(--color-card, #fff)',
-                border: '1px solid var(--color-border, #e5e7eb)',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)',
-                minHeight: '90px',
-                padding: '10px',
-                transition: 'box-shadow 0.15s, transform 0.15s',
-              }}
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 8px 24px rgba(0,0,0,0.13), 0 2px 6px rgba(0,0,0,0.06)'
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)'
-                ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--color-primary, #2563eb)'
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 8px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04)'
-                ;(e.currentTarget as HTMLElement).style.transform = 'translateY(0)'
-                ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--color-border, #e5e7eb)'
-              }}>
+              className="pos-product-card material-control text-left flex flex-col">
               <p className="font-semibold text-xs leading-tight mb-1 flex-1"
-                style={{color: 'var(--color-text, #111827)', display: '-webkit-box', WebkitLineClamp: 2,
+                style={{color: 'var(--text-strong)', display: '-webkit-box', WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical', overflow: 'hidden'}}>{product.name}</p>
-              <p className="font-bold text-sm" style={{color: 'var(--color-primary, #2563eb)'}}>
+              <p className="font-bold text-sm" style={{color: 'var(--color-primary)'}}>
                 K {Number(product.selling_price).toLocaleString()}
               </p>
-              <p className="text-xs mt-0.5"
-                style={{color: product.stock_qty <= 0 ? '#ef4444' : 'var(--color-text-sub, #6b7280)'}}>
+              <p className={`text-xs mt-0.5 ${product.stock_qty <= 0 ? 'pos-stock-out' : product.stock_qty <= 5 ? 'pos-stock-low' : 'pos-stock'}`}>
                 {product.stock_qty <= 0 ? t.product_out_of_stock : `${product.stock_qty} ကျန်`}
               </p>
             </button>

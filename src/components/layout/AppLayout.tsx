@@ -303,10 +303,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (fonts[th.fontSize]) document.body.style.fontSize = fonts[th.fontSize]
         const sv: Record<string,Record<string,string>> = {
           light: {
-            '--sidebar-text':'#000000','--sidebar-hover-bg':'#F1F5F9',
-            '--sidebar-hover-text':'#0F172A','--sidebar-active-bg':'#0D9488',
-            '--sidebar-active-text':'#FFFFFF','--sidebar-border':'#CBD5E1',
-            '--sidebar-group-text':'#374151','--sidebar-title':'#000000','--sidebar-icon':'#374151',
+            '--sidebar-text':'#CBD5E1','--sidebar-hover-bg':'#1F2937',
+            '--sidebar-hover-text':'#FFFFFF','--sidebar-active-bg':'#0D9488',
+            '--sidebar-active-text':'#FFFFFF','--sidebar-border':'#273449',
+            '--sidebar-group-text':'#94A3B8','--sidebar-title':'#FFFFFF','--sidebar-icon':'#94A3B8',
           },
           dark: {
             '--sidebar-text':'#CBD5E1','--sidebar-hover-bg':'#1e293b',
@@ -329,10 +329,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         const defaults: Record<string,string> = {
           '--color-primary':'#2563eb','--color-bg':'#f9fafb','--color-card':'#ffffff',
           '--color-text':'#111827','--color-border':'#e5e7eb','--color-sidebar':'#111827',
-          '--sidebar-text':'#000000','--sidebar-hover-bg':'#F1F5F9',
-          '--sidebar-hover-text':'#0F172A','--sidebar-active-bg':'#0D9488',
-          '--sidebar-active-text':'#FFFFFF','--sidebar-border':'#CBD5E1',
-          '--sidebar-group-text':'#374151','--sidebar-title':'#000000','--sidebar-icon':'#374151',
+          '--sidebar-text':'#CBD5E1','--sidebar-hover-bg':'#1F2937',
+          '--sidebar-hover-text':'#FFFFFF','--sidebar-active-bg':'#0D9488',
+          '--sidebar-active-text':'#FFFFFF','--sidebar-border':'#273449',
+          '--sidebar-group-text':'#94A3B8','--sidebar-title':'#FFFFFF','--sidebar-icon':'#94A3B8',
         }
         Object.entries(defaults).forEach(([k,v]) => document.documentElement.style.setProperty(k,v))
         document.body.style.backgroundColor = '#f9fafb'
@@ -466,7 +466,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {/* Topbar */}
           <div
-            className="flex items-center justify-between px-4 py-2 border-b sticky top-0 flex-shrink-0"
+            className="erp-topbar flex items-center justify-between px-4 py-2 border-b sticky top-0 flex-shrink-0"
             style={{
               backgroundColor: 'var(--color-card)',
               borderColor: 'var(--color-border)',
@@ -479,7 +479,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               {isMobile && (
                 <button
                   onClick={() => setSidebarOpen(true)}
-                  className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="material-control p-2 rounded-xl transition-colors"
                   style={{ color: 'var(--color-text)' }}>
                   <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="2" y1="5" x2="18" y2="5" />
@@ -491,10 +491,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Center: ERP / Support mode switcher */}
-            <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+            <div className="mode-switcher flex gap-2 p-1 rounded-lg">
               <Link
                 href="/dashboard"
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                className={`material-control px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
                   !pathname.startsWith('/support')
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-600 hover:bg-gray-200'

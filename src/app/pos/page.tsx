@@ -51,7 +51,7 @@ export default function POSPage() {
   }
 
   const handleConfirmPayment = useCallback(async (paymentData: {
-    paymentType: string; amountReceived: number; payments?: { method: string; amount: number }[]
+    paymentType: string; amountReceived: number; payments?: { method: string; amount: number; bankAccountId?: string }[]
     customerId?: string; customerName?: string; bankAccountId?: string
   }) => {
     // PaymentModal ကနေ customer ရွေးထားရင် override လုပ်မယ်
@@ -71,6 +71,8 @@ export default function POSPage() {
       product_id: item.id, qty: item.quantity, unit_price: item.selling_price
     }))
     const grandTotal = itemsToSend.reduce((s, i) => s + i.qty * i.unit_price, 0)
+    const bankPayment = (paymentData.payments || []).find((p: any) => p.method === 'bank')
+    const normalizedPaymentType = bankPayment ? 'bank' : (paymentData.paymentType === 'credit' ? 'credit' : 'cash')
     const amountPaid = paymentData.paymentType === 'credit' ? 0 : paymentData.amountReceived
     const draft = {
       occurred_at: new Date().toISOString(),
@@ -83,6 +85,10 @@ export default function POSPage() {
         grand_total: grandTotal,
         amount_paid: amountPaid,
       },
+      payment: {
+        payment_type: normalizedPaymentType,
+        bank_account_id: bankPayment?.bankAccountId || '',
+      },
       lines: itemsToSend.map(i => ({
         product_id: i.product_id, qty: i.qty, unit_price: i.unit_price
       })),
@@ -94,7 +100,7 @@ export default function POSPage() {
       await supabase.rpc('set_staff_company', { p_company_id: posCompanyId })
     }
 
-    const { data: rpcResult, error } = await supabase.rpc('rpc_post_pos_sale_from_draft', {
+    const { data: rpcResult, error } = await supabase.rpc('rpc_post_pos_sale_from_draft_v2', {
       p_request_id: requestId, p_idempotency_key: requestId + '-pos', p_draft: draft
     })
     if (error) {
@@ -145,14 +151,14 @@ export default function POSPage() {
         </div>
 
         {/* Mobile layout */}
-        <div className="md:hidden flex flex-col w-full">
+        <div className="md:hidden flex flex-col w-full pos-mobile-shell">
           {/* Mobile header with cart icon */}
-          <div className="flex items-center justify-between px-4 py-3 sticky top-0 z-30 border-b"
+          <div className="pos-mobile-bar flex items-center justify-between px-4 py-3 sticky top-0 z-30 border-b"
             style={{backgroundColor:'var(--color-card)', borderColor:'var(--color-border)', zIndex: 20}}>
             <h1 className="font-bold text-lg" style={{color:'var(--color-text)'}}>🛒 POS</h1>
             <button onClick={() => setShowMobileCart(true)}
-              className="relative p-2 rounded-xl"
-              style={{backgroundColor:'var(--color-bg)'}}>
+              className="material-control relative p-2 rounded-xl"
+              style={{backgroundColor:'var(--surface-2)'}}>
               <span className="text-2xl">🛒</span>
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
@@ -165,9 +171,9 @@ export default function POSPage() {
           {/* Total bar */}
           {cartCount > 0 && (
             <div className="px-4 py-2 flex items-center justify-between"
-              style={{backgroundColor:'#eff6ff', borderBottom:'1px solid #bfdbfe'}}>
-              <span className="text-sm text-blue-700 font-medium">{cartCount} items</span>
-              <span className="font-bold text-blue-700">K {totalAmount.toLocaleString()}</span>
+              style={{backgroundColor:'var(--surface-3)', borderBottom:'1px solid var(--color-border)'}}>
+              <span className="text-sm font-medium" style={{color:"var(--text-muted)"}}>{cartCount} items</span>
+              <span className="font-bold" style={{color:"var(--text-strong)"}}>K {totalAmount.toLocaleString()}</span>
             </div>
           )}
 
@@ -181,7 +187,7 @@ export default function POSPage() {
             <div className="p-4 border-t sticky bottom-0"
               style={{backgroundColor:'var(--color-card)', borderColor:'var(--color-border)', zIndex: 20}}>
               <button onClick={() => setShowMobileCart(true)}
-                className="w-full py-4 bg-blue-600 text-white font-bold rounded-2xl text-base flex items-center justify-between px-5">
+                className="material-control w-full py-4 bg-blue-600 text-white font-bold rounded-2xl text-base flex items-center justify-between px-5 shadow-lg">
                 <span>🛒 Cart ကြည့်မည်</span>
                 <span className="bg-white text-blue-600 px-3 py-1 rounded-xl text-sm font-bold">
                   K {totalAmount.toLocaleString()}

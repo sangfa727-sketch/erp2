@@ -84,8 +84,8 @@ export default function DamagedStockPage() {
 
   return (
     <AppLayout>
-      <div className="p-4 md:p-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-4">
+      <div className="px-3 py-4 md:p-6 max-w-6xl mx-auto">
+        <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-800">{tAny.dmg_title}</h1>
             <p className="text-xs text-gray-500 mt-1">{tAny.dmg_subtitle}</p>
@@ -121,7 +121,7 @@ export default function DamagedStockPage() {
               {item.note&&<p className="text-xs text-gray-500 mb-2">📝 {item.note}</p>}
               <div className="flex justify-between items-center">
                 <span className="text-xs text-gray-400">{new Date(item.created_at).toLocaleDateString()}</span>
-                <button onClick={()=>setModal({...item})} className="px-3 py-1 bg-yellow-500 text-white rounded text-xs">{tAny.dmg_edit_btn}</button>
+                <button onClick={()=>setModal({...item})} className="material-control min-h-[44px] px-3 py-1 rounded-xl text-xs text-white">{tAny.dmg_edit_btn}</button>
               </div>
             </div>
           ))}
@@ -175,7 +175,7 @@ export default function DamagedStockPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{tAny.dmg_product} *</label>
                 <select value={modal.product_id||''} onChange={e=>setModal({...modal,product_id:e.target.value})}
-                  className="w-full p-2.5 border rounded-lg text-sm">
+                  className="pos-search w-full min-h-[48px] p-3 border rounded-xl text-sm">
                   <option value="">{tAny.dmg_select_product}</option>
                   {products.map(p=><option key={p.id} value={p.id}>{p.name} ({p.unit})</option>)}
                 </select>
@@ -183,7 +183,7 @@ export default function DamagedStockPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{tAny.dmg_supplier}</label>
                 <select value={modal.supplier_id||''} onChange={e=>setModal({...modal,supplier_id:e.target.value})}
-                  className="w-full p-2.5 border rounded-lg text-sm">
+                  className="pos-search w-full min-h-[48px] p-3 border rounded-xl text-sm">
                   <option value="">{t.pur_no_supplier}</option>
                   {suppliers.map(s=><option key={s.id} value={s.id}>{s.contact_name}</option>)}
                 </select>
@@ -192,12 +192,12 @@ export default function DamagedStockPage() {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{tAny.dmg_qty} *</label>
                   <input type="text" value={modal.qty||''} onChange={e=>{const v=toEnglishNumber(e.target.value);if(/^\d*\.?\d*$/.test(v))setModal({...modal,qty:v})}}
-                    className="w-full p-2.5 border rounded-lg text-sm" />
+                    className="pos-search w-full min-h-[48px] p-3 border rounded-xl text-sm" />
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">{tAny.dmg_unit_cost_label} *</label>
                   <input type="text" value={modal.unit_cost||''} onChange={e=>{const v=toEnglishNumber(e.target.value);if(/^\d*$/.test(v))setModal({...modal,unit_cost:v})}}
-                    className="w-full p-2.5 border rounded-lg text-sm" />
+                    className="pos-search w-full min-h-[48px] p-3 border rounded-xl text-sm" />
                 </div>
               </div>
               {modal.qty&&modal.unit_cost&&(
@@ -219,12 +219,12 @@ export default function DamagedStockPage() {
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">{tAny.dmg_note}</label>
                 <textarea value={modal.note||''} onChange={e=>setModal({...modal,note:e.target.value})}
-                  className="w-full p-2.5 border rounded-lg text-sm" rows={2} />
+                  className="pos-search w-full min-h-[48px] p-3 border rounded-xl text-sm" rows={2} />
               </div>
             </div>
             {msg&&<p className={'text-sm mt-3 '+(msg.includes('✅')?'text-green-600':'text-red-500')}>{msg}</p>}
             <div className="flex gap-2 mt-4">
-              <button onClick={()=>setModal(null)} className="flex-1 py-2.5 border rounded-lg text-sm">{t.btn_cancel}</button>
+              <button onClick={()=>setModal(null)} className="material-control flex-1 min-h-[52px] py-2.5 border rounded-xl text-sm">{t.btn_cancel}</button>
               <button onClick={save} disabled={saving} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg text-sm disabled:opacity-50">
                 {saving ? t.settings_saving : '✅ ' + t.btn_save}
               </button>

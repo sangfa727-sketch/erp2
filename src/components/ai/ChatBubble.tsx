@@ -60,14 +60,14 @@ const TRANSCRIBE_ENDPOINT = '/api/voice/gemini-transcribe';
 
 // Recording behavior
 const SILENCE_THRESHOLD = 18;   // 0-255 byte amplitude; below = silent
-const SILENCE_DURATION_MS = 1200; // ms of continuous silence → auto-stop
-const MIN_RECORDING_MS = 700;   // don't auto-stop before this (after speech)
-const MAX_RECORDING_MS = 30000; // safety cap
+const SILENCE_DURATION_MS = 700; // ms of continuous silence → auto-stop
+const MIN_RECORDING_MS = 450;   // don't auto-stop before this (after speech)
+const MAX_RECORDING_MS = 20000; // safety cap
 
 // Speech-onset detection (anti-noise / false-trigger fix)
 const SPEECH_ONSET_THRESHOLD = 28; // higher than silence — requires real speech
-const SPEECH_ONSET_WINDOW_MS = 3000; // wait this long for speech to start
-const NOISE_FLOOR_FRAMES = 8;     // consecutive frames above threshold = real speech
+const SPEECH_ONSET_WINDOW_MS = 1800; // wait this long for speech to start
+const NOISE_FLOOR_FRAMES = 5;     // consecutive frames above threshold = real speech
 
 // =============================================================================
 // Localization
@@ -272,6 +272,7 @@ const NAV_WHITELIST: RegExp[] = [
   /^\/finance(\/.*)?(\?.*)?$/,
   /^\/employees(\/.*)?(\?.*)?$/,
   /^\/expenses(\/.*)?(\?.*)?$/,
+  /^\/finance\/money-flow(\/.*)?(\?.*)?$/,
   /^\/sales-return(\/.*)?(\?.*)?$/,
   /^\/shipments(\/.*)?(\?.*)?$/,
   /^\/settings(\/.*)?(\?.*)?$/,
@@ -652,6 +653,7 @@ export default function ChatBubble() {
           (m, i, arr) =>
             !(i === arr.length - 1 && m.role === 'assistant' && !m.content)
         );
+        const aiRequestStartedAt = performance.now();
         const res = await fetch(N8N_WEBHOOK, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -668,6 +670,17 @@ export default function ChatBubble() {
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
+        // This measures total n8n wait (workflow + model + response transfer).
+        // It does not log prompt, transcript, reply, or session identifiers.
+        console.info('[ERP2 latency]', {
+          phase: 'n8n_chat',
+          client_ms: Math.round(performance.now() - aiRequestStartedAt),
+          ok: res.ok,
+          response_bytes: (() => {
+            try { return new TextEncoder().encode(JSON.stringify(data)).length; }
+            catch { return null; }
+          })(),
+        });
         const reply =
           data?.output ||
           data?.reply ||
@@ -794,11 +807,22 @@ export default function ChatBubble() {
         const formData = new FormData();
         formData.append('audio', blob, 'voice.webm');
         formData.append('language', session.language);
+        const transcribeStartedAt = performance.now();
         const res = await fetch(TRANSCRIBE_ENDPOINT, {
           method: 'POST',
           body: formData,
         });
         const data = await res.json().catch(() => ({}));
+        // Log timings only; never log audio, transcript, session ID, or user text.
+        console.info('[ERP2 latency]', {
+          phase: 'transcription',
+          client_ms: Math.round(performance.now() - transcribeStartedAt),
+          server_ms: Number.isFinite(Number(data?.duration_ms))
+            ? Number(data.duration_ms)
+            : null,
+          audio_bytes: blob.size,
+          ok: res.ok,
+        });
         if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
         const transcript = String(data?.transcript || '').trim();
         if (!transcript) {
@@ -1060,6 +1084,7 @@ export default function ChatBubble() {
           const dy = Math.abs(e.clientY - dragStartRef.current.y);
           if (dx < 5 && dy < 5) handleOpen();
         }}
+        className="erp2-chatbubble-launcher"
         style={{
           position: 'fixed',
           left: position.x,
@@ -1105,6 +1130,7 @@ export default function ChatBubble() {
 
   return (
     <div
+      className="erp2-chatbubble-panel"
       style={{
         position: 'fixed',
         right: 20,
@@ -1768,6 +1794,34 @@ if (
       from { transform: translateY(20px); opacity: 0; }
       to   { transform: translateY(0);    opacity: 1; }
     }
+    /* Mobile: compact bottom-sheet interaction; keep the launcher reachable above browser UI. */
+    @media (max-width: 640px) {
+      .erp2-chatbubble-launcher {
+        left: auto !important;
+        right: max(16px, env(safe-area-inset-right)) !important;
+        top: auto !important;
+        bottom: max(16px, env(safe-area-inset-bottom)) !important;
+        width: 56px !important;
+        height: 56px !important;
+        touch-action: manipulation !important;
+      }
+      .erp2-chatbubble-panel {
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: min(86dvh, 720px) !important;
+        max-height: calc(100dvh - env(safe-area-inset-top)) !important;
+        border-radius: 20px 20px 0 0 !important;
+        border-left: 0 !important;
+        border-right: 0 !important;
+        border-bottom: 0 !important;
+      }
+      .erp2-chatbubble-panel form {
+        padding-bottom: max(12px, env(safe-area-inset-bottom)) !important;
+      }
+    }
+
     @keyframes cbMsgIn {
       from { transform: translateY(6px); opacity: 0; }
       to   { transform: translateY(0);   opacity: 1; }
